@@ -32,16 +32,17 @@ if __name__ == '__main__':
     try:
         file = argv[1]
     except IndexError:
-        msg = 'File not specified'
+        msg = 'No file specified'
         myLogger.error(msg)
         exit(msg)
     
     # parse input
     if file:
-        try:
-            parse_file(file, myLogger)
-        except Exception as e:
-            msg = 'Failed to parse file: ' + e.args[0]
-            myLogger.error(msg)
-            exit(msg)
+        parse_file(file, myLogger)
+        #try:
+        #    parse_file(file, myLogger)
+        #except Exception as e:
+        #    msg = 'Failed to parse file: ' + e.args[0]
+        #    myLogger.error(msg)
+        #    exit(msg)
 
