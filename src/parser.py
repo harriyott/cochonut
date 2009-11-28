@@ -5,6 +5,7 @@ Created on Nov 18, 2009
 """
 
 from xml.etree import ElementTree
+from lxml import etree
 
 def parse_file(file, logger):
     """
@@ -17,16 +18,40 @@ def parse_file(file, logger):
     
     myLogger.info('Parsing ' + file)    
     
-    tree = ElementTree.parse(file)
+    # parse file to a xml-tree datastructure
+    #tree = ElementTree.parse(file)
+    docFile = open(file,'r')
+    doc = etree.parse(docFile)
+    docroot = doc.getroot()
     
-    # check that we have MusicXML
-    root = tree.getroot()
-    if root.tag != 'score-partwise' and root.tag != 'score-timewise':
+    # check if we need to convert to time-wise format
+    if docroot.tag == 'score-partwise':
+        myLogger.info('Found part-wise score: Converting to time-wise.')
+        xsltFileName = '../xslt_stylesheets/parttime.xsl'
+        xsltFile = open(xsltFileName,'r')    
+        xsltDoc = etree.parse(xsltFile)
+        transform = etree.XSLT(xsltDoc)
+        tree = transform(doc)
+    elif docroot.tag == 'score-timewise':
+        myLogger.info('Found time-wise score.')
+        tree = doc
+    else:
         error = 'Provided file is not MusicXML'
         myLogger.error(error)
         raise Exception(error)
     
-    # TODO: convert to score-timewise?? (lxml)
+    
+    #print result_tree.getroot().tag
+    #print result_tree.findall('measure')
+    print tree.getroot().tag
+    
+    
+    # check that we have MusicXML
+    #root = tree.getroot()
+    #if root.tag != 'score-partwise' and root.tag != 'score-timewise':
+    #    error = 'Provided file is not MusicXML'
+    #    myLogger.error(error)
+    #    raise Exception(error)
     
     # TODO: Only supporting part-wise
     
