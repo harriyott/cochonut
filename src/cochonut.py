@@ -38,20 +38,20 @@ if __name__ == '__main__':
     
     # parsing
     if file:
-        shortestNote = 1
-        mSegments = []
+        largest_divisor = 1
+        intervals = []
         try:
-            shortestNote, mSegments = parse_file(file, myLogger)
+            largest_divisor, intervals = parse_file(file, myLogger)
         except Exception as e:
             msg = 'Failed to parse file: ' + e.args[0]
             myLogger.error(msg)
             exit(msg)
             
         # partitioning
-        if len(mSegments) > 0:
+        if len(intervals) > 0:
             segments = []
             try:
-                segments = partitionScore(mSegments, myLogger)
+                segments = partitionScore(intervals, myLogger)
             except Exception as e:
                 msg = 'Failed to partition: ' + e.args[0]
                 myLogger.error(msg)

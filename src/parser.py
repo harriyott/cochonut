@@ -86,6 +86,17 @@ def find_largest_div(tree):
 
     return largest_divisor
 
+def store_pitch_in_list(intervals,pitch, start, length):
+    #print start
+    
+    for i in range(start,start+length):
+        if i+1 > len(intervals):
+            intervals.append({'attacks': 0, 'pitches': []})
+        intervals[i]['pitches'].append(pitch)
+        
+    intervals[start]['attacks'] = intervals[start]['attacks'] + 1
+    #print str(intervals[start])
+
 def parse_file(file, logger):
     """
     Parse a file of the MusicXML format.
@@ -138,7 +149,9 @@ def parse_file(file, logger):
     next_interval = 0
 
     # find largest divisor
+    myLogger.info("Searching for largest divisor")
     largest_divisor = find_largest_div(tree)
+    myLogger.info("Shortest note is 1/" + str(4*largest_divisor))
 
     # current divisor    
     #current_div = largest_divisor
@@ -146,7 +159,7 @@ def parse_file(file, logger):
     # iterate through file
     measures = tree.findall('measure')
     for measure in measures:
-        print 'measure', measure.attrib['number']
+        #print 'measure', measure.attrib['number']
         parts = measure.findall('part')
         #ElementTree.dump(measure)
 
@@ -158,7 +171,7 @@ def parse_file(file, logger):
             # get id
             part_id = part_elem.attrib['id']
             #part = get_part(part_list, part_id)
-            print 'part', part_elem.attrib['id']
+            #print 'part', part_elem.attrib['id']
 
             #---- attributes ----#
 
@@ -181,19 +194,24 @@ def parse_file(file, logger):
                 if p_child.tag == 'note':
                     note_data = get_note_data(p_child)
 
+                    # TODO: handle grace notes with no duration
                     duration = 0
                     if note_data.has_key('duration'):
                         duration = note_data['duration']
-                    #print 'duration:', duration
+                    print 'duration:', duration
                     current_div = get_part_div(part_list, part_id)
                     quater_part = duration / float(current_div)
                     #print 'quater_part:', quater_part
                     length = int(quater_part * largest_divisor)
                     
                         
+                    # TODO: handle rests (have next/current intervals for measures/parts)
                     if note_data['type'] == 'rest':
+                        #current_interval = next_interval                                
+                        #next_interval = current_interval + length
                         print 'Found rest'
                         print 'length:', length
+                        
                     elif note_data['type'] == 'pitch':
                         #print 'Found pitch'
 
@@ -203,7 +221,7 @@ def parse_file(file, logger):
 
                         # find length in terms of intervals
                         #print 'current_div', current_div
-                        # TODO: handle grace notes with no duration
+                        
                         #duration = 0
                         #if note_data.has_key('duration'):
                         #    duration = note_data['duration']
@@ -214,60 +232,12 @@ def parse_file(file, logger):
                         #print 'length:', length
 
                         if note_data['isChord']:
-
-                            
-                            #pass
-                            print 'Chord note'
-                            # 
-                            #current = current - 1
-                            
-                            # pitch
-                            #alt = 0
-                            #if note_data.has_key('p_alt'):
-                            #    alt = note_data['p_alt']
-                            #p_class = get_pitch_class(note_data['p_step'], alt)
-                            #pitch = {'pitch': p_class, 'octave': note_data['p_octave']}
-                                
-                            # store in intervals list
-                            #for i in range(current_interval,current_interval+length):
-                            #    if i+1 > len(intervals):
-                            #        intervals.append([])
-                            #    intervals[i].append(pitch)
-                            #    
-                            #print "Added " + str(pitch) + ' from ' + str(current_interval) + ' to ' + str(current_interval+length)
-                            
-                            # increment no. of attacks 
-                            #a = mini_segments[current]['attacks']
-                            #a = a + 1
-                            #mini_segments[current]['attacks'] = a
-                            
-                            #mini_segments[current]['pitches'].append(pitch)
-                            #current = current + 1
-
+                            pass
+                            #print 'Chord note'
                         else:
-                        
-                            
-                            print "Non-chord note"
+                            #print "Non-chord note"
                             current_interval = next_interval                                
-                            next_interval = current_interval + length;
-
-                            #if len(mini_segments) >= current + 1:
-                            #    # a minimal segment already exists
-                            #    pass
-
-                            #else:
-                            #    # no minimal segment; create one
-                            #    print 'Creating mini seg'
-
-
-                                #mini_seg = {'attacks': 1, 'length': 0, 'pitches': []}
-                                #mini_segments.append(mini_seg)
-                                
-                                #mini_segments[current]['pitches'] = []
-                                #mini_segments[current]['pitches'].append(pitch)
-                                #current = current + 1
-
-                                #next_interval = 
+                            next_interval = current_interval + length                         
                         
                         # pitch
                         alt = 0
@@ -279,12 +249,10 @@ def parse_file(file, logger):
                         pitch = {'pitch-class': p_class, 'octave': note_data['p_octave']}
                                 
                         # store in intervals list
-                        for i in range(current_interval,current_interval+length):
-                            if i+1 > len(intervals):
-                                intervals.append([])
-                            intervals[i].append(pitch)
-                            
-                        print "Added " + str(pitch) + ' from ' + str(current_interval) + ' to ' + str(current_interval+length)
+                        # TODO: handle grace notes with no duration
+                        if duration > 0:
+                            store_pitch_in_list(intervals, pitch, current_interval, length)
+                            print "Added " + str(pitch) + ' from ' + str(current_interval) + ' to ' + str(current_interval+length-1)
 
 
                 #---- forward/backup ----#
@@ -300,11 +268,11 @@ def parse_file(file, logger):
                     
                     #if note_data.has_key('duration'):
                     #    duration = note_data['duration']
-                    #print 'duration:', duration
+                    print 'duration:', duration
                     
                     #print 'quater_part:', quater_part
                     
-                    print 'length:', length
+                    #print 'length:', length
                     #current_div = part['div']
 
                     #print 'duration:', duration.text
@@ -318,17 +286,22 @@ def parse_file(file, logger):
                     quater_part = duration / float(current_div)
                     length = int(quater_part * largest_divisor)
                     next_interval = next_interval - length
+                    print 'duration:', duration
+                    print 'quater_part:',quater_part
+                    print 'largest_divisor:', largest_divisor
+                    print 'div:', current_div
                     print 'length:', length
                     #current_div = part['div']
-                    #print 'duration:', duration.text
-                    #print 'div:', current_div
+                    
+                    
 
     shortestNote = 4 * largest_divisor
     myLogger.info('Done parsing, now returning')
     
-    print str(intervals)
+    print str(intervals[12])
     
-    return shortestNote, mini_segments
+    #return shortestNote, mini_segments
+    return largest_divisor, intervals
 
 #---- end of parse_file ----#
 
@@ -353,3 +326,47 @@ def parse_file(file, logger):
                 #    if mode is not None:
                 #        #print 'mode:', mode.text
                 #        pass
+                
+#if len(mini_segments) >= current + 1:
+                            #    # a minimal segment already exists
+                            #    pass
+
+                            #else:
+                            #    # no minimal segment; create one
+                            #    print 'Creating mini seg'
+
+
+                                #mini_seg = {'attacks': 1, 'length': 0, 'pitches': []}
+                                #mini_segments.append(mini_seg)
+                                
+                                #mini_segments[current]['pitches'] = []
+                                #mini_segments[current]['pitches'].append(pitch)
+                                #current = current + 1
+
+                                #next_interval = 
+                                
+# 
+                            #current = current - 1
+                            
+                            # pitch
+                            #alt = 0
+                            #if note_data.has_key('p_alt'):
+                            #    alt = note_data['p_alt']
+                            #p_class = get_pitch_class(note_data['p_step'], alt)
+                            #pitch = {'pitch': p_class, 'octave': note_data['p_octave']}
+                                
+                            # store in intervals list
+                            #for i in range(current_interval,current_interval+length):
+                            #    if i+1 > len(intervals):
+                            #        intervals.append([])
+                            #    intervals[i].append(pitch)
+                            #    
+                            #print "Added " + str(pitch) + ' from ' + str(current_interval) + ' to ' + str(current_interval+length)
+                            
+                            # increment no. of attacks 
+                            #a = mini_segments[current]['attacks']
+                            #a = a + 1
+                            #mini_segments[current]['attacks'] = a
+                            
+                            #mini_segments[current]['pitches'].append(pitch)
+                            #current = current + 1
