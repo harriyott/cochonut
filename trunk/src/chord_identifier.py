@@ -1,7 +1,6 @@
 '''
-Created on Nov 22, 2009
+Chord identifier
 
-@author: epb
 '''
 
 """
