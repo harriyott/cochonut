@@ -1,7 +1,6 @@
 """
-Created on Nov 16, 2009
+COCHONUT
 
-@author: epb
 """
 
 from sys import argv
@@ -9,6 +8,7 @@ from sys import exit
 import logging.handlers
 
 from parser import parse_file
+from partitioner import partitionScore
 
 LOG_FILE = '../log/mylog.log'
 
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     
     set_up_logging()
     
-    myLogger.info('Starting cochonut')
+    myLogger.info('---------------- Starting cochonut ----------------')
     
     # get file to parse
     file = ''
@@ -36,13 +36,24 @@ if __name__ == '__main__':
         myLogger.error(msg)
         exit(msg)
     
-    # parse input
+    # parsing
     if file:
-        parse_file(file, myLogger)
-        #try:
-        #    parse_file(file, myLogger)
-        #except Exception as e:
-        #    msg = 'Failed to parse file: ' + e.args[0]
-        #    myLogger.error(msg)
-        #    exit(msg)
+        shortestNote = 1
+        mSegments = []
+        try:
+            shortestNote, mSegments = parse_file(file, myLogger)
+        except Exception as e:
+            msg = 'Failed to parse file: ' + e.args[0]
+            myLogger.error(msg)
+            exit(msg)
+            
+        # partitioning
+        if len(mSegments) > 0:
+            segments = []
+            try:
+                segments = partitionScore(mSegments, myLogger)
+            except Exception as e:
+                msg = 'Failed to partition: ' + e.args[0]
+                myLogger.error(msg)
+                exit(msg)                    
 
