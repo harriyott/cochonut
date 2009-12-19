@@ -21,10 +21,10 @@ def partitionScore(intervals, logger):
             length = length + 1 
             mini_segments[last]['length'] = length
     
-    print mini_segments[3]
+    #print 'mini-seg 3:', mini_segments[3]
     
-    # create segments, that is, every time we have at least REQUIRED changes
-    # TODO!
+    # create segments, that is, split up every time we have
+    # at least REQUIRED note-attacks
     REQUIRED = 3
     logger.info('Creating segments')
     
@@ -39,7 +39,7 @@ def partitionScore(intervals, logger):
             segments[last]['mini-segments'].append(mini_seg)
             
     logger.info('Done partitioning, now returning')
-    #print segments[1]
+    print 'segments: ', segments
     return segments
     
     #for mSegment in mSegments:
