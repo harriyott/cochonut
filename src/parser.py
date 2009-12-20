@@ -6,10 +6,12 @@ Parser
 from xml.etree import ElementTree
 from lxml import etree
 
-# the main pitch classes without alternating steps
-PITCH_CLASSES = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}
+VERBOSE = False
 
 def get_note_data(note_elem):
+    '''
+    Retrieve data about a note from a MusicXML note-element
+    '''
 
     #print 'Getting note_data for:\n', ElementTree.dump(note_elem)
 
@@ -60,14 +62,13 @@ def get_part_list(tree):
     return part_list
 
 def get_part(part_list, part_id):
+    '''
+    Find a part with a given id in the list of parts
+    '''
     for part in part_list:
         if part['id'] == part_id:
             return part
     return None
-
-# TODO: Support quater-tone sharp?
-def get_pitch_class(step, alt):
-    return (PITCH_CLASSES[step] + alt) % 12
 
 def get_part_div(part_list, id):
     for part in part_list:
@@ -76,7 +77,7 @@ def get_part_div(part_list, id):
     return None
 
 def set_part_div(part_list, id, div):
-    myLogger.info('Setting divisions for part ' + id + ' to ' + str(div))
+    #myLogger.info('Setting divisions for part ' + id + ' to ' + str(div))
     for part in part_list:
         if part['id'] == id:
             part['div'] = div
@@ -84,7 +85,8 @@ def set_part_div(part_list, id, div):
 
 def find_largest_div(tree):
     '''
-    Find the largest divisor in the entire score 
+    Find the largest divisor in the entire score. Used to specifiy the length
+    of intervals that are the length of the shortest note in the score.
     '''
     largest_divisor = 1
     divisions = tree.findall('measure/part/attributes/divisions')
@@ -92,7 +94,7 @@ def find_largest_div(tree):
         div = int(d.text)
         if div > largest_divisor:
             largest_divisor = div
-            myLogger.info('Found new largest divisor: ' + str(largest_divisor))
+            #myLogger.info('Found new largest divisor: ' + str(largest_divisor))
 
     return largest_divisor
 
@@ -116,16 +118,21 @@ def store_pitch(intervals,pitch, start, length):
     intervals[start]['attacks'] = intervals[start]['attacks'] + 1
     #print str(intervals[start])
 
-def parse_file(file, logger):
+
+
+
+def parse_file(file, pitch_classes):
     """
     Parse a file of the MusicXML format.
     
     """
 
-    global myLogger
-    myLogger = logger
+    #global myLogger
+    #myLogger = logger
 
-    myLogger.info('Parsing ' + file)
+    #myLogger.info('Parsing ' + file)
+    if VERBOSE:
+        print 'Parsing', file
 
     # parse file to a xml-tree datastructure
     #tree = ElementTree.parse(file)
@@ -135,18 +142,18 @@ def parse_file(file, logger):
 
     # check if we need to convert to time-wise format
     if docroot.tag == 'score-partwise':
-        myLogger.info('Found part_elem-wise score, converting to time-wise')
+        #myLogger.info('Found part_elem-wise score, converting to time-wise')
         xsltFileName = '../xslt_stylesheets/parttime.xsl'
         xsltFile = open(xsltFileName, 'r')
         xsltDoc = etree.parse(xsltFile)
         transform = etree.XSLT(xsltDoc)
         tree = transform(doc)
     elif docroot.tag == 'score-timewise':
-        myLogger.info('Found time-wise score')
+        #myLogger.info('Found time-wise score')
         tree = doc
     else:
         error = 'Provided file is not MusicXML'
-        myLogger.error(error)
+        #myLogger.error(error)
         raise Exception(error)
 
     # TODO: Below: Consistent looping through children: either by using find() or getchildren()
@@ -160,7 +167,8 @@ def parse_file(file, logger):
     # get the list of parts that the score consists of
     part_list = get_part_list(tree)
     #myLogger.info('Found part_elem-list: ' + str(part_list))
-    print 'Found part_elem-list: ', str(part_list)
+    if VERBOSE:
+        print 'Found part_elem-list: ', str(part_list)
 
     # the current interval
     #current = 0
@@ -170,7 +178,8 @@ def parse_file(file, logger):
     #myLogger.info("Searching for largest divisor")
     largest_divisor = find_largest_div(tree)
     #myLogger.info("Shortest note is 1/" + str(4*largest_divisor))
-    print "Shortest note is 1/" + str(4*largest_divisor)
+    if VERBOSE:
+        print "Shortest note is 1/" + str(4*largest_divisor)
 
     # current divisor    
     #current_div = largest_divisor
@@ -189,10 +198,12 @@ def parse_file(file, logger):
 
             # get id of part
             part_id = part_elem.attrib['id']
-            print '------------part ' + part_elem.attrib['id'] + '-------------'
+            if VERBOSE:
+                print '------------part ' + part_elem.attrib['id'] + '-------------'
             part = get_part(part_list, part_id)
             next_interval = part['next_interval']
-            print 'Next interval in this part: ', next_interval
+            if VERBOSE:
+                print 'Next interval in this part: ', next_interval
 
             #---- attributes ----#
 
@@ -239,8 +250,9 @@ def parse_file(file, logger):
                         
                         #print 'Found rest with length', length
                         store_rest(intervals, next_interval, length)
-                        print "Added rest from " + str(next_interval) + " to " \
-                        + str(next_interval+length-1)
+                        if VERBOSE:
+                            print "Added rest from " + str(next_interval) + " to " \
+                            + str(next_interval+length-1)
                         next_interval = next_interval + length
                         
                         
@@ -274,20 +286,24 @@ def parse_file(file, logger):
                             current_interval = next_interval                                
                             next_interval = current_interval + length                        
                         
-                        # pitch
+                        # pitch alternation
                         alt = 0
                         if note_data.has_key('p_alt'):
                             alt = note_data['p_alt']
-                        #print 'step', note_data['p_step']
-                        #print alt
-                        p_class = get_pitch_class(note_data['p_step'], alt)
-                        pitch = {'pitch-class': p_class, 'octave': note_data['p_octave']}
+                        
+                        # pitch (class + octave)
+                        # TODO: Support quater-tone sharp?
+                        p_class = (pitch_classes[note_data['p_step']] + alt) % 12
+                        pitch = {'pitch_class': p_class, 'octave': note_data['p_octave']}
                                 
                         # store in intervals list
                         # TODO: handle grace notes with no duration
                         if duration > 0:
                             store_pitch(intervals, pitch, current_interval, length)
-                            print "Added " + str(pitch) + ' from ' + str(current_interval) + ' to ' + str(current_interval+length-1)
+                            if VERBOSE:
+                                print "Added " + str(pitch) + ' from ' + \
+                                str(current_interval) + ' to ' + \
+                                str(current_interval+length-1)
 
 
                 #---- forward/backup ----#
@@ -300,7 +316,8 @@ def parse_file(file, logger):
                     length = int(quater_part * largest_divisor)
                     next_interval = next_interval + length
                     
-                    print 'Forward with length ' + str(length)
+                    if VERBOSE:
+                        print 'Forward with length ' + str(length)
                     
                     #if note_data.has_key('duration'):
                     #    duration = note_data['duration']
@@ -321,7 +338,9 @@ def parse_file(file, logger):
                     quater_part = duration / float(current_div)
                     length = int(quater_part * largest_divisor)
                     next_interval = next_interval - length
-                    print 'Backup with length ' + str(length)
+                    
+                    if VERBOSE:
+                        print 'Backup with length ' + str(length)
                     #print 'quater_part:',quater_part
                     #print 'largest_divisor:', largest_divisor
                     #print 'div:', current_div
@@ -330,7 +349,7 @@ def parse_file(file, logger):
             part['next_interval'] = next_interval
 
     shortestNote = 4 * largest_divisor
-    myLogger.info('Done parsing, now returning')
+    #myLogger.info('Done parsing, now returning')
     
     #print str(intervals[12])
     
