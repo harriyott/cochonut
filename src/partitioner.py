@@ -1,46 +1,91 @@
-'''
-Partitioner
+VERBOSE = True
 
-'''
-
-# TODO: Not considering time-window (section 4.1, COCHONUT)
-
-def partition_score(intervals, logger, required_attacks):
-    logger.info('Partitioning score with ' + str(len(intervals)) + ' intervals')
+def partition_score(intervals, required_attacks, time_frame):
+    '''
+    Partition a score represented by intervals. The function will
+    return a list of segments where each segment starts with
+    required_attacks note-attacks or more within length time_frame.
+    '''
     
+    if VERBOSE:
+        print 'Partitioning score with ' + str(len(intervals)) + ' intervals'
+         
     # create minimal segments, that is, everywhere the notes change
-    logger.info('Creating minimal segments')
     mini_segments = []
     for interval in intervals:
-        if interval['attacks'] > 0:
-            # new mini-segment
-            mini_seg = {'length': 1,
-                        'attacks': interval['attacks'],
-                        'pitches': interval['pitches']}
-            mini_segments.append(mini_seg)
+        
+        # index of currently last mini-segment
+        last = len(mini_segments)-1
+        
+        # we append a new mini-segment if
+        # - there are no mini-segments yet or
+        # - there are note-attacks in the current interval or
+        # - the current interval is a rest and the previous wasn't
+        if len(mini_segments) == 0 or interval['attacks'] > 0 or \
+        (len(interval['pitches']) == 0 and \
+         len(mini_segments[last]['pitches']) > 0):
+            
+            mini_segments.append({'length': 1,
+                                  'attacks': interval['attacks'],
+                                  'pitches': interval['pitches']})
+            
         else:
-            # no attacks: append interval to current mini-segment
-            last = len(mini_segments)-1
-            length = mini_segments[last]['length']
-            length = length + 1 
-            mini_segments[last]['length'] = length
+            mini_segments[last]['length'] += 1
     
-    #print 'mini-seg 3:', mini_segments[3]
+    if VERBOSE:
+        print 'mini-segments:', mini_segments
     
     # create segments, that is, split up every time we have
     # at least 'required_attacks' note-attacks
-    logger.info('Creating segments')
+    #logger.info('Creating segments')
     
-    segments = [{'chord': '', 'mini-segments': []}]
-    for mini_seg in mini_segments:
+    if VERBOSE:
+        print 'Creating segments from ' + str(len(mini_segments)) + \
+        ' mini segments'
+        print 'If ' + str(required_attacks) + \
+        ' or more note-attacks happen within the length ' + \
+        str(time_frame) + ', a new segment will be created'
+    
+    no_of_mini_segments = len(mini_segments)
+    segments = []
+    
+    m = 0
+    while m in range(no_of_mini_segments):
         
-        if mini_seg['attacks'] >= required_attacks:
-            s = {'chord': '', 'mini-segments': [mini_seg]}
-            segments.append(s)
+        # TODO: Refactor!
+        mini_seg = mini_segments[m]
+        
+        # the list of mini-segments that will form a possible new segment
+        mini_segs = [mini_seg]
+        
+        # the no. of note-attacks within the time-frame
+        total_attacks = mini_seg['attacks']
+        
+        total_length = mini_seg['length']
+        next = m + 1
+        while next < no_of_mini_segments and \
+        total_length + mini_segments[next]['length'] <= time_frame:
+            if VERBOSE:
+                print 'mini segments ' + str(m) + ' and ' + str(next) + ' are within the timeframe'
+            total_length += mini_segments[next]['length']
+            total_attacks += mini_segments[next]['attacks']
+            mini_segs.append(mini_segments[next])
+            next += 1
+        
+        if total_attacks >= required_attacks:
+            segments.append({'possible_chord': True,
+                             'chord': '',
+                             'mini-segments': mini_segs})
+        elif len(segments) == 0:
+            segments.append({'possible_chord': False,
+                             'chord': '',
+                             'mini-segments': mini_segs})
         else:
-            last = len(segments) - 1
-            segments[last]['mini-segments'].append(mini_seg)
+            segments[len(segments) - 1]['mini-segments'].append(mini_seg)
             
-    logger.info('Done partitioning, now returning')
-    print 'segments: ', segments
+        m = next
+            
+    if VERBOSE:
+        print 'segments: ', segments
+        
     return segments
