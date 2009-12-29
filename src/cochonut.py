@@ -1,5 +1,6 @@
 from sys import argv
 from sys import exit
+
 from parser import parse_file
 from partitioner import partition_score
 from chord_identifier import identify_chords
@@ -48,6 +49,7 @@ REQUIRED_ATTACKS = 3
 MIN_SCORE = 0.85
 
 # the timeframe in which the required attacks must occur for chord change
+# TODO: Should be based on beat?
 TIME_FRAME = 1.0/16
 
 VERBOSE = True
@@ -63,8 +65,7 @@ if __name__ == '__main__':
     try:
         file = argv[1]
     except IndexError:
-        msg = 'No file specified'
-        exit(msg)
+        exit('No file specified')
     
     # parsing
     if file:
@@ -75,8 +76,7 @@ if __name__ == '__main__':
                 print 'Starting parser....'
             largest_divisor, intervals = parse_file(file, PITCH_CLASSES)
         except Exception as e:
-            msg = 'Failed to parse file: ' + e.args[0]
-            exit(msg)
+            exit('Failed to parse file: ' + e.args[0])
             
         # partitioning
         if len(intervals) > 0:
@@ -90,8 +90,7 @@ if __name__ == '__main__':
                     print 'Starting partitioner....'
                 segments = partition_score(intervals, REQUIRED_ATTACKS, frame_length)
             except Exception as e:
-                msg = 'Failed to partition: ' + e.args[0]
-                exit(msg)
+                exit('Failed to partition: ' + e.args[0])
                 
             # chord identifiyng
             if len(segments) > 0:
@@ -99,12 +98,12 @@ if __name__ == '__main__':
                     print 'Starting chord-identifier....'
                 identify_chords(segments, templates,
                                 REQUIRED_ATTACKS, NO_OF_PITCH_CLASSES, MIN_SCORE)
-                #print 'segments after identifier:', segments
                 
+                # context analyzing
                 if VERBOSE:
                     print 'Starting context-analyzer....'
                 key = {'mode': 'minor', 'fifths': -5}
-                analyse_segments(key, segments, None)
+                analyse_segments(key, segments)
                 
                 # print results
                 if VERBOSE:

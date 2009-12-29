@@ -14,39 +14,69 @@ chord_types = {0: 'tonic',
                4: 'tonic parallel',
                5: 'subdominant parallel',
                6: 'dominant parallel',
-               7: 'incomplete dominant'}
+               7: 'incomplete dominant',
+               8: 'dominant none',
+               9: 'dominant quater sixth',
+               10: 'subdominant sixth',
+               11: 'incomplete subdominant',
+               12: 'minor subdominant'}
+
 
 def is_tonic(tonic, chord):
-    pass
+    return tonic == chord['root']
 
-def is_dominant(tonic_pitch_class, chord):
-    '''
-    chord must be normalized so we have its root at the first index
-    '''
-    return scale[5] == (chord[0] - tonic_pitch_class) % 12
+def is_dominant(tonic, chord):
+    return scale[5] == (chord['root'] - tonic) % 12
 
-def is_dominantseptim(tonic_pitch_class, chord):
-    '''
-    chord must be normalized so we have its root at the first index
-    '''
-    pass
-    #return is_dominant(tonic_pitch_class, chord) and len(chord) >= 4 and ??
+def is_subdominant(tonic, chord):
+    return scale[4] == (chord['root'] - tonic) % 12
+
+
+
+def is_dominant_seventh(tonic, chord):
+    return is_dominant(tonic, chord) and \
+    chord['pitches'][(tonic + scale[4]) % 12] != 0
     
-def is_subdominant(tonic_pitch_class, chord):
-    return scale[4] == (chord[0] - tonic_pitch_class) % 12
+def is_incomplete_dominant(tonic, chord):
+    return is_dominant_seventh(tonic, chord) and \
+    chord['pitches'][(tonic + scale[5]) % 12] == 0
+    
+    
+# TODO: p. 56
+def is_dominant_none(tonic, chord):
+    return is_dominant(tonic, chord)
 
-def is_tonikaparallel(tonic_pitch_class, chord_root, chord_is_minor):
+# TODO: p. 57
+def is_dominant_quater_sixth(tonic, chord):
+    return is_dominant(tonic, chord)
+
+
+# TODO: p. 58
+def is_subdominant_sixth(tonic, chord):
+    return is_subdominant(tonic, chord)
+
+# TODO: p. 58
+def is_incomplete_subdominant(tonic, chord):
+    return is_subdominant_sixth(tonic, chord)
+
+def is_minor_subdominant(tonic, chord):
+    '''
+    Should only be used when the key is major
+    '''
+    return is_subdominant(tonic, chord)
+
+
+def is_tonic_parallel(tonic, chord, chord_is_minor):
     if chord_is_minor:
-        return ((tonic_pitch_class - 3) % 12) == chord_root
+        return ((tonic - 3) % 12) == chord['root']
     else:
-        return ((tonic_pitch_class + 3) % 12) == chord_root
-    
+        return ((tonic + 3) % 12) == chord['root']
 
-def is_subdominantparallel(tonic_pitch_class, chord_root):
-    return is_subdominant(tonic_pitch_class,((chord_root + 3) % 12))
+def is_subdominant_parallel(tonic, chord):
+    return is_subdominant(tonic,((chord['root'] + 3) % 12))
 
-def is_dominantparallel(tonic_pitch_class, chord_root):
-    return is_dominant(tonic_pitch_class,((chord_root + 3) % 12))
+def is_dominant_parallel(tonic, chord):
+    return is_dominant(tonic,((chord['root'] + 3) % 12))
 
 
 
