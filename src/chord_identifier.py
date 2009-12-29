@@ -1,4 +1,4 @@
-VERBOSE = True
+VERBOSE = False
 
 def get_score(weight, template):
     '''
@@ -29,7 +29,8 @@ def identify_chords(segments, chord_templates,
     '''
     
     if VERBOSE:
-        print 'Identifying chords in score with ' + str(len(segments)) + ' segments'
+        print 'Identifying chords in score with ' + \
+        str(len(segments)) + ' segments'
 
     for segment in segments:
         mini_segments = segment['mini-segments']

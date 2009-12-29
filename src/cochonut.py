@@ -1,15 +1,13 @@
 from sys import argv
 from sys import exit
-#import logging.handlers
-
 from parser import parse_file
 from partitioner import partition_score
 from chord_identifier import identify_chords
-
-LOG_FILE = '../log/mylog.log'
+from contextanalyzer import analyse_segments
 
 # chord templates
 # TODO: Even better to give templates in text-file?
+# TODO: Re-naming of chords
 templates = [{'name': 'major triad', 'template': [0, 4, 7]},
              {'name': 'minor triad', 'template': [0, 3, 7]},
              {'name': 'diminished triad', 'template': [0, 3, 6]},
@@ -52,12 +50,12 @@ MIN_SCORE = 0.85
 # the timeframe in which the required attacks must occur for chord change
 TIME_FRAME = 1.0/16
 
-VERBOSE = False
+VERBOSE = True
 
 if __name__ == '__main__':
     
     if VERBOSE:
-        print '---------------- Starting cochonut ----------------'
+        print 'Starting cochonut....'
         print 'Time-frame is ', TIME_FRAME
     
     # get file to parse from command-line arguments
@@ -74,7 +72,7 @@ if __name__ == '__main__':
         intervals = []
         try:
             if VERBOSE:
-                print '---------------- Starting parser ----------------'
+                print 'Starting parser....'
             largest_divisor, intervals = parse_file(file, PITCH_CLASSES)
         except Exception as e:
             msg = 'Failed to parse file: ' + e.args[0]
@@ -89,7 +87,7 @@ if __name__ == '__main__':
             segments = []
             try:
                 if VERBOSE:
-                    print '---------------- Starting partitioner ----------------'
+                    print 'Starting partitioner....'
                 segments = partition_score(intervals, REQUIRED_ATTACKS, frame_length)
             except Exception as e:
                 msg = 'Failed to partition: ' + e.args[0]
@@ -98,8 +96,21 @@ if __name__ == '__main__':
             # chord identifiyng
             if len(segments) > 0:
                 if VERBOSE:
-                    print '---------------- Starting chord-identifier ----------------'
+                    print 'Starting chord-identifier....'
                 identify_chords(segments, templates,
                                 REQUIRED_ATTACKS, NO_OF_PITCH_CLASSES, MIN_SCORE)
                 #print 'segments after identifier:', segments
+                
+                if VERBOSE:
+                    print 'Starting context-analyzer....'
+                key = {'mode': 'minor', 'fifths': -5}
+                analyse_segments(key, segments, None)
+                
+                # print results
+                if VERBOSE:
+                    print 'Segments with chords:'
+                    for s in range(len(segments)):
+                        if segments[s].has_key('chord'):
+                            print 'Segment ' + str(s) + ', chord: ' + \
+                            str(segments[s]['chord'])
 

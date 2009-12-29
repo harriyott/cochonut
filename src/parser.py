@@ -213,8 +213,7 @@ def parse_file(file, pitch_classes):
                     # the note lasts
                     length = int(quater_part * largest_divisor)
                     
-                        
-                    # TODO: handle rests (have next/current intervals for measures/parts)
+                    
                     if note_data['type'] == 'rest':
                         store_rest(intervals, next_interval, length)
                         if VERBOSE:
