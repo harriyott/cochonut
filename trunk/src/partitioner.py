@@ -1,4 +1,4 @@
-VERBOSE = True
+VERBOSE = False
 
 def partition_score(intervals, required_attacks, time_frame):
     '''
@@ -37,7 +37,6 @@ def partition_score(intervals, required_attacks, time_frame):
     
     # create segments, that is, split up every time we have
     # at least 'required_attacks' note-attacks
-    #logger.info('Creating segments')
     
     if VERBOSE:
         print 'Creating segments from ' + str(len(mini_segments)) + \
@@ -74,11 +73,11 @@ def partition_score(intervals, required_attacks, time_frame):
         
         if total_attacks >= required_attacks:
             segments.append({'possible_chord': True,
-                             'chord': '',
+                             'candidates': [],
                              'mini-segments': mini_segs})
         elif len(segments) == 0:
             segments.append({'possible_chord': False,
-                             'chord': '',
+                             'candidates': [],
                              'mini-segments': mini_segs})
         else:
             segments[len(segments) - 1]['mini-segments'].append(mini_seg)
