@@ -1,5 +1,74 @@
 #----------- UNUSED CODE --------------#
 
+#def is_tonic(tonic, chord):
+#    return tonic == chord['root']
+#
+#def is_dominant(tonic, chord):
+#    return scale[5] == (chord['root'] - tonic) % 12
+#
+#def is_subdominant(tonic, chord):
+#    return scale[4] == (chord['root'] - tonic) % 12
+
+
+
+#def is_dominant_seventh(tonic, chord):
+#    return is_dominant(tonic, chord) and \
+#    chord['pitches'][(tonic + scale[4]) % 12] != 0
+    
+#def is_incomplete_dominant(tonic, chord):
+#    return is_dominant_seventh(tonic, chord) and \
+#    chord['pitches'][(tonic + scale[5]) % 12] == 0
+    
+    
+#def is_dominant_none(tonic, chord):
+#    return is_dominant(tonic, chord)
+#    
+#
+
+#def is_dominant_quater_sixth(tonic, chord):
+#    return is_dominant(tonic, chord)
+
+
+#def is_subdominant_sixth(tonic, chord):
+#    return is_subdominant(tonic, chord)
+
+#def is_incomplete_subdominant(tonic, chord):
+#    return is_subdominant_sixth(tonic, chord)
+
+#def is_minor_subdominant(tonic, chord):
+#    '''
+#    Should only be used when the key is major
+#    '''
+#    return is_subdominant(tonic, chord)
+
+#chord_types = {0: 'tonic',
+#               1: 'dominant',
+#               2: 'dominant seventh',
+#               3: 'subdominant',
+#               4: 'tonic parallel',
+#               5: 'subdominant parallel',
+#               6: 'dominant parallel',
+#               7: 'incomplete dominant',
+#               8: 'dominant none',
+#               9: 'dominant quater sixth',
+#               10: 'subdominant sixth',
+#               11: 'incomplete subdominant',
+#               12: 'minor subdominant'}
+
+#def is_tonic_parallel(tonic, chord, chord_is_minor):
+#    if chord_is_minor:
+#        return ((tonic - 3) % 12) == chord['root']
+#    else:
+#        return ((tonic + 3) % 12) == chord['root']
+#
+#def is_subdominant_parallel(tonic, chord):
+#    return is_subdominant(tonic,((chord['root'] + 3) % 12))
+#
+#def is_dominant_parallel(tonic, chord):
+#    return is_dominant(tonic,((chord['root'] + 3) % 12))
+
+
+
 #def get_part_div(part_list, id):
 #    for part in part_list:
 #        if part['id'] == id:
