@@ -28,7 +28,6 @@ def partition_score(intervals, required_attacks, time_frame):
             mini_segments.append({'length': 1,
                                   'attacks': interval['attacks'],
                                   'pitches': interval['pitches']})
-            
         else:
             mini_segments[last]['length'] += 1
     
@@ -48,10 +47,12 @@ def partition_score(intervals, required_attacks, time_frame):
     no_of_mini_segments = len(mini_segments)
     segments = []
     
+    # use index to iterate mini segments as we need to be able to
+    # retrieve the coming mini segments
     m = 0
     while m in range(no_of_mini_segments):
         
-        # TODO: Refactor!
+        # current mini segment
         mini_seg = mini_segments[m]
         
         # the list of mini-segments that will form a possible new segment
@@ -60,10 +61,16 @@ def partition_score(intervals, required_attacks, time_frame):
         # the no. of note-attacks within the time-frame
         total_attacks = mini_seg['attacks']
         
+        # the total length is the length of all the mini segments that
+        # are within the time frame
         total_length = mini_seg['length']
         next = m + 1
+        
+        # check how many mini segments
+        # that can fit within the timeframe
         while next < no_of_mini_segments and \
         total_length + mini_segments[next]['length'] <= time_frame:
+            
             if VERBOSE:
                 print 'mini segments ' + str(m) + ' and ' + str(next) + ' are within the timeframe'
             total_length += mini_segments[next]['length']
@@ -72,14 +79,17 @@ def partition_score(intervals, required_attacks, time_frame):
             next += 1
         
         if total_attacks >= required_attacks:
+            # found enoughh note attacks to start new segment
             segments.append({'possible_chord': True,
                              'candidates': [],
                              'mini-segments': mini_segs})
         elif len(segments) == 0:
+            # adding first segment (not a possible chord as the first check was false) 
             segments.append({'possible_chord': False,
                              'candidates': [],
                              'mini-segments': mini_segs})
         else:
+            # no new segment, so add the mini segments to the latest
             segments[len(segments) - 1]['mini-segments'].append(mini_seg)
             
         m = next

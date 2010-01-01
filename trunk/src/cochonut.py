@@ -105,6 +105,8 @@ if __name__ == '__main__':
                 key = {'mode': 'minor', 'fifths': -5}
                 analyse_segments(key, segments)
                 
+                # TODO: from cochonut: 'a post-processing step is made to merge consecutive segments with identical chords.'
+                
                 # print results
                 if VERBOSE:
                     print 'Segments with chords:'

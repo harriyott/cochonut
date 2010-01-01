@@ -1,14 +1,14 @@
-VERBOSE = False
+VERBOSE = True
 
 def get_score(weight, template):
     '''
     Get the score of a weight vector using a given template.
-    The template must be ...
+    The template must be adjusted to a given root/template combination
     '''
     # sum of pitch-occurences for pitch-classes in template
-    positive = 0.0
+    positives = 0.0
     # sum of pitch-occurences for pitch-classes outside template
-    negative = 0.0
+    negatives = 0.0
     # number of pitch-classes from template that are not "attacked"
     misses = 0.0
     for w in range(len(weight)):
@@ -16,11 +16,11 @@ def get_score(weight, template):
             if weight[w] == 0:
                 misses += 1
             else:
-                positive += weight[w]
+                positives += weight[w]
         else:
-            negative += weight[w]
-    score = positive - negative - misses
-    return score
+            negatives += weight[w]
+    return positives - (negatives + misses)
+
 
 def identify_chords(segments, chord_templates,
                     required_attacks, no_of_pitches, min_score):
@@ -61,13 +61,15 @@ def identify_chords(segments, chord_templates,
 
                     scores.append({'root': p,
                                    'template': t,
+                                   'pitches': weight,
                                    'score': score})
 
                     if score > best_score:
                         best_score = score
 
 
-            # From list of scores: use those who are less than 85% of max. score
+            # From list of scores: use those who are more
+            # than min_score of the highest score
             segment_chords = []
             for score in scores:
                 if best_score > 0 and \
@@ -78,5 +80,3 @@ def identify_chords(segments, chord_templates,
                 print 'candidates for segment:', segment_chords
             
             segment['candidates'] = segment_chords
-    
-    # ----- end of segment in segments ----- #

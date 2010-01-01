@@ -1,15 +1,22 @@
 from lxml import etree
 
-VERBOSE = False
+VERBOSE = True
 
 def get_note_data(note_elem):
     '''
     Retrieve data about a note from a MusicXML note-element. The data
-    will be returned in a dictionary
+    will be returned in a dictionary with the following elements:
+    
+    is_chord: whether the note is part of a chord
+    type: possible values: pitch and rest
+    duration: value of the duration element
+    p_step (only if pitch): letter that determines the step of pitch
+    p_octave (only if pitch): octave no.
+    p_alt (only if pitch): 1 if sharp, -1 if flat
     '''
 
-    if VERBOSE:
-        print 'Getting note_data for:\n', etree.dump(note_elem)
+    #if VERBOSE:
+    #    print 'Getting note_data for:\n', etree.dump(note_elem)
 
     note_data = {'is_chord': False}
 
@@ -33,11 +40,6 @@ def get_note_data(note_elem):
         if alter_elem is not None:
             note_data['p_alt'] = int(alter_elem.text)
 
-    # TODO: Use unpitched-tag?
-    #unpitch_elem = note_elem.find('unpitched')
-    #if unpitch_elem is not None:
-    #    note_data['type'] = 'unpitched'
-
     rest_elem = note_elem.find('rest')
     if rest_elem is not None:
         note_data['type'] = 'rest'
@@ -49,8 +51,7 @@ def get_note_data(note_elem):
     return note_data
 
 def get_part_list(tree):
-    '''
-    Retrieve a list of the part_elems in the music. The music must be
+    '''Retrieve a list of the part_elems in the music. The music must be
     represented by a MusicXML-tree.
     '''
     part_list = []
@@ -85,18 +86,18 @@ def find_largest_div(tree):
 
     return largest_divisor
 
-def store_rest(intervals, start, length):
+def add_rest(intervals, start, length):
     '''
-    Store a rest in the list of intervals. The rest will start at
+    Add a rest to the list of intervals. The rest will start at
     interval 'start' and last start+length intervals.
     '''
     for i in range(start,start+length):
         if i+1 > len(intervals):
             intervals.append({'attacks': 0, 'pitches': []})
 
-def store_pitch(intervals,pitch, start, length):
+def add_pitch(intervals,pitch, start, length):
     """
-    Store a pitch in the list of intervals. The pitch will start at
+    Add a pitch to the list of intervals. The pitch will start at
     interval 'start' and last start+length intervals.
     """
     #print start
@@ -186,13 +187,13 @@ def parse_file(file, pitch_classes):
                 divisions = att_elem.find('divisions')
                 if divisions is not None:
                     part['div'] = int(divisions.text)
-                    #set_part_div(part_list, part_id, int(divisions.text))
                     
             current_div = part['div'] # current divisor in this part
 
 
-            #---- pitches ----#
-
+            # get all children of the part using getchildren so
+            # we get note, forward and backup elements in the right
+            # order
             p_children = part_elem.getchildren()
             for p_child in p_children:
 
@@ -201,7 +202,6 @@ def parse_file(file, pitch_classes):
                 if p_child.tag == 'note':
                     note_data = get_note_data(p_child)
 
-                    # TODO: handle grace notes with no duration?
                     duration = 0
                     if note_data.has_key('duration'):
                         duration = note_data['duration']
@@ -213,9 +213,8 @@ def parse_file(file, pitch_classes):
                     # the note lasts
                     length = int(quater_part * largest_divisor)
                     
-                    
                     if note_data['type'] == 'rest':
-                        store_rest(intervals, next_interval, length)
+                        add_rest(intervals, next_interval, length)
                         if VERBOSE:
                             print "Added rest from " + str(next_interval) + " to " \
                             + str(next_interval+length-1)
@@ -223,13 +222,11 @@ def parse_file(file, pitch_classes):
                         
                     elif note_data['type'] == 'pitch':
 
-                        if note_data['is_chord']:
-                            pass
-                            #print 'Chord note'
-                        else:
-                            #print "Non-chord note"
+                        if not note_data['is_chord']:
                             # the note is not a chord, so the interval that we
-                            # place the note in is the next one
+                            # place the note in is the next one. If the
+                            # note was a chord, the current interval
+                            # will be the same as the one for the previous note
                             current_interval = next_interval                                
                             next_interval = current_interval + length                        
                         
@@ -239,14 +236,12 @@ def parse_file(file, pitch_classes):
                             alt = note_data['p_alt']
                         
                         # pitch (class + octave)
-                        # TODO: Support quater-tone sharp?
                         p_class = (pitch_classes[note_data['p_step']] + alt) % 12
                         pitch = {'pitch_class': p_class, 'octave': note_data['p_octave']}
                                 
                         # store in intervals list
-                        # TODO: handle grace notes with no duration
                         if duration > 0:
-                            store_pitch(intervals, pitch, current_interval, length)
+                            add_pitch(intervals, pitch, current_interval, length)
                             if VERBOSE:
                                 print "Added " + str(pitch) + ' from ' + \
                                 str(current_interval) + ' to ' + \
@@ -255,10 +250,10 @@ def parse_file(file, pitch_classes):
 
                 #---- forward/backup ----#
 
+                # move the next_interval forward or backwards
                 if p_child.tag == 'forward':
                     duration_elem = p_child.find('duration')
                     duration = int(duration_elem.text)
-                    #current_div = get_part_div(part_list, part_id)
                     quater_part = duration / float(current_div)
                     length = int(quater_part * largest_divisor)
                     next_interval = next_interval + length
@@ -269,7 +264,6 @@ def parse_file(file, pitch_classes):
                 if p_child.tag == 'backup':
                     duration_elem = p_child.find('duration')
                     duration = int(duration_elem.text)
-                    #current_div = get_part_div(part_list, part_id)
                     quater_part = duration / float(current_div)
                     length = int(quater_part * largest_divisor)
                     next_interval = next_interval - length
@@ -277,8 +271,8 @@ def parse_file(file, pitch_classes):
                     if VERBOSE:
                         print 'Backup with length ' + str(length)
                     
+            # store the next interval with the part as we may be
+            # switching to another part
             part['next_interval'] = next_interval
     
     return largest_divisor, intervals
-
-#---- end of parse_file ----#
