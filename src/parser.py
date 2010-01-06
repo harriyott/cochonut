@@ -1,6 +1,6 @@
 from lxml import etree
 
-VERBOSE = True
+VERBOSE = False
 
 def get_note_data(note_elem):
     '''
@@ -50,6 +50,8 @@ def get_note_data(note_elem):
 
     return note_data
 
+
+
 def get_part_list(tree):
     '''Retrieve a list of the part_elems in the music. The music must be
     represented by a MusicXML-tree.
@@ -63,6 +65,8 @@ def get_part_list(tree):
         part_list.append(part)
     return part_list
 
+
+
 def get_part(part_list, part_id):
     '''
     Find a part with a given id in the list of parts
@@ -72,10 +76,12 @@ def get_part(part_list, part_id):
             return part
     return None
 
+
+
 def find_largest_div(tree):
     '''
     Find the largest divisor in the entire score. Used to specifiy the length
-    of intervals that are the length of the shortest note in the score.
+    of intervals that has the length of the shortest note in the score.
     '''
     largest_divisor = 1
     divisions = tree.findall('measure/part/attributes/divisions')
@@ -86,6 +92,18 @@ def find_largest_div(tree):
 
     return largest_divisor
 
+def find_key(tree):
+    '''
+    Find key.
+    '''
+    key = {}
+    key_elem = tree.find('measure/part/attributes/key')
+    if key_elem is not None:
+        key['mode'] = key_elem.find('mode').text
+        key['fifths'] = int(key_elem.find('fifths').text)
+    return key
+
+
 def add_rest(intervals, start, length):
     '''
     Add a rest to the list of intervals. The rest will start at
@@ -95,35 +113,31 @@ def add_rest(intervals, start, length):
         if i+1 > len(intervals):
             intervals.append({'attacks': 0, 'pitches': []})
 
+
+
 def add_pitch(intervals,pitch, start, length):
-    """
+    '''
     Add a pitch to the list of intervals. The pitch will start at
     interval 'start' and last start+length intervals.
-    """
-    #print start
-    
+    '''
     for i in range(start,start+length):
         if i+1 > len(intervals):
             intervals.append({'attacks': 0, 'pitches': []})
         intervals[i]['pitches'].append(pitch)
         
     intervals[start]['attacks'] = intervals[start]['attacks'] + 1
-    #print str(intervals[start])
-
 
 
 
 def parse_file(file, pitch_classes):
-    """
+    '''
     Parse a file of the MusicXML format.
-    
-    """
+    '''
     
     if VERBOSE:
         print 'Parsing', file
 
     # parse file to a xml-xml_tree datastructure
-    #xml_tree = ElementTree.parse(file)
     docFile = open(file, 'r')
     doc = etree.parse(docFile)
     docroot = doc.getroot()
@@ -141,7 +155,10 @@ def parse_file(file, pitch_classes):
         error = 'Provided file is not MusicXML'
         raise Exception(error)
 
-    # TODO: Below: Consistent looping through children: either by using find() or getchildren() which is faster?
+    # key of the score
+    key = find_key(xml_tree)
+    if VERBOSE:
+        print 'Found key:', key
 
     # the intervals that will be returned
     intervals = []
@@ -275,4 +292,4 @@ def parse_file(file, pitch_classes):
             # switching to another part
             part['next_interval'] = next_interval
     
-    return largest_divisor, intervals
+    return largest_divisor, intervals, key
