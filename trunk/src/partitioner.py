@@ -1,10 +1,14 @@
-VERBOSE = False
+VERBOSE = True
 
 def partition_score(intervals, required_attacks, time_frame):
     '''
     Partition a score represented by intervals. The function will
     return a list of segments where each segment starts with
     required_attacks note-attacks or more within length time_frame.
+    
+    intervals: list of intervals that represent the score
+    required_attacks: no. of note-attacks required to have chord-change
+    time_frame: 
     '''
     
     if VERBOSE:

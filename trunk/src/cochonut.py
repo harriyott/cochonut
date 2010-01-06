@@ -7,24 +7,25 @@ from chord_identifier import identify_chords
 from contextanalyzer import analyse_segments
 
 # chord templates
-# TODO: Even better to give templates in text-file?
-# TODO: Re-naming of chords
-templates = [{'name': 'major triad', 'template': [0, 4, 7]},
-             {'name': 'minor triad', 'template': [0, 3, 7]},
-             {'name': 'diminished triad', 'template': [0, 3, 6]},
-             {'name': 'augmented triad', 'template': [0, 4, 8]},
+# TODO: More chords from http://www.looknohands.com/chordhouse/piano/ and Re-naming of chords
+templates = [{'name': 'maj', 'template': [0, 4, 7]},
+             {'name': 'minor', 'template': [0, 3, 7]},
+             {'name': 'diminished', 'template': [0, 3, 6]},
+             {'name': 'augmented', 'template': [0, 4, 8]},
              {'name': 'sus4', 'template': [0, 5, 7]},
              {'name': 'sus2', 'template': [0, 2, 7]},
-             {'name': 'maj-min (dom) 7th', 'template': [0, 4, 7, 10]},
+             
+             {'name': 'maj7', 'template': [0, 4, 7, 11]},
+             {'name': 'dom', 'template': [0, 4, 7, 10]},
              {'name': 'half diminished', 'template': [0, 3, 6, 10]},
              {'name': 'fully diminished', 'template': [0, 3, 6, 9]},
-             {'name': 'major 7th', 'template': [0, 4, 7, 11]},
              {'name': 'minor 7th', 'template': [0, 3, 7, 10]},
              {'name': 'minor-maj7', 'template': [0, 3, 7, 11]},
              {'name': '+7', 'template': [0, 4, 8, 10]},
              {'name': '7sus4', 'template': [0, 5, 7, 10]},
-             {'name': '6', 'template': [0, 4, 7, 9]},
+             {'name': 'maj6', 'template': [0, 4, 7, 9]},
              {'name': 'm6', 'template': [0, 3, 7, 9]},
+             
              {'name': '9', 'template': [0, 4, 7, 10, 2]},
              {'name': '9b', 'template': [0, 4, 7, 10, 1]},
              {'name': '9#', 'template': [0, 4, 7, 10, 3]},
@@ -36,8 +37,11 @@ templates = [{'name': 'major triad', 'template': [0, 4, 7]},
              {'name': '7add6', 'template': [0, 4, 7, 10, 9]}]
 
 # the main pitch classes without alternating steps
-PITCH_CLASSES = {'C': 0, 'D': 2, 'E': 4, 'F': 5,
-                 'G': 7, 'A': 9, 'B': 11}
+PITCH_CLASSES = {'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5,
+                 'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11}
+
+map = {0: 'C', 1: 'C#', 2: 'D', 3: 'D#', 4: 'E', 5: 'F',
+                 6: 'F#', 7: 'G', 8: 'G#', 9: 'A', 10: 'A#', 11: 'B'}
 
 # no. of pitch classes
 NO_OF_PITCH_CLASSES = 12
@@ -74,7 +78,7 @@ if __name__ == '__main__':
         try:
             if VERBOSE:
                 print 'Starting parser....'
-            largest_divisor, intervals = parse_file(file, PITCH_CLASSES)
+            largest_divisor, intervals, key = parse_file(file, PITCH_CLASSES)
         except Exception as e:
             exit('Failed to parse file: ' + e.args[0])
             
@@ -102,7 +106,6 @@ if __name__ == '__main__':
                 # context analyzing
                 if VERBOSE:
                     print 'Starting context-analyzer....'
-                key = {'mode': 'minor', 'fifths': -5}
                 analyse_segments(key, segments)
                 
                 # TODO: from cochonut: 'a post-processing step is made to merge consecutive segments with identical chords.'
@@ -113,5 +116,6 @@ if __name__ == '__main__':
                     for s in range(len(segments)):
                         if segments[s].has_key('chord'):
                             print 'Segment ' + str(s) + ', chord: ' + \
-                            str(segments[s]['chord'])
+                            map[segments[s]['chord']['root']] + '-' + \
+                            segments[s]['chord']['template']['name']
 

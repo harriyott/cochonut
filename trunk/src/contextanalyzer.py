@@ -48,14 +48,26 @@ DOMINANT_PARALLEL \
 # D_2: T_3
 # D9: T
 
-possible_transitions = {TONIC: [TONIC, DOMINANT, SUBDOMINANT, \
-                                SUBDOMINANT_PARALLEL, \
-                                DOMINANT_PARALLEL, TONIC_PARALLEL, \
+possible_transitions = {TONIC: [TONIC, DOMINANT, SUBDOMINANT,
+                                SUBDOMINANT_PARALLEL,
+                                DOMINANT_PARALLEL, TONIC_PARALLEL,
                                 INCOMPLETE_DOMINANT, INCOMPLETE_SUBDOMINANT],
-                        TONIC_PARALLEL: [DOMINANT, DOMINANT_SEVENTH, \
-                                         SUBDOMINANT, SUBDOMINANT_SIXTH, \
+                        TONIC_PARALLEL: [DOMINANT, DOMINANT_SEVENTH,
+                                         SUBDOMINANT, SUBDOMINANT_SIXTH,
                                          DOMINANT_PARALLEL, INCOMPLETE_SUBDOMINANT],
-                        SUBDOMINANT: []}
+                        SUBDOMINANT: [DOMINANT, DOMINANT_SEVENTH,
+                                      SUBDOMINANT_SIXTH, DOMINANT_QUARTER_SIXTH],
+                                      DOMINANT: [],
+                                      DOMINANT_SEVENTH: [],
+                                      INCOMPLETE_DOMINANT: [],
+                                      DOMINANT_NONE: [],
+                                      DOMINANT_QUARTER_SIXTH: [],
+                                      SUBDOMINANT_SIXTH: [],
+                                      SUBDOMINANT_PARALLEL_SEVENTH: [],
+                                      MINOR_SUBDOMINANT: [],
+                                      INCOMPLETE_SUBDOMINANT: [],
+                                      SUBDOMINANT_PARALLEL: [],
+                                      DOMINANT_PARALLEL: []}
 
 
 def get_chord_type(tonic, chord):
@@ -68,14 +80,14 @@ def get_chord_type(tonic, chord):
     small_none = 14
     fifth = 6
     domi_dist = 7
-    minor = chord['mode'] == 'minor'
+    minor = tonic['mode'] == 'minor'
     
     # tonic
-    if tonic == chord['root']:
+    if tonic['root'] == chord['root']:
         return TONIC
     
     # dominant
-    elif domi_dist == (chord['root'] - TONIC) % 12:
+    elif domi_dist == (chord['root'] - tonic['root']) % 12:
         
         # dominant none, small none added
         if chord['pitches'][(chord['root'] + small_none) % 12] != 0:
@@ -85,7 +97,7 @@ def get_chord_type(tonic, chord):
         elif chord['pitches'][(chord['root'] + small_seventh) % 12] != 0:
 
             # in-complete dominant, no pitch at root
-            if chord['pitches'][(tonic + domi_dist) % 12] == 0:
+            if chord['pitches'][(tonic['root'] + domi_dist) % 12] == 0:
                 return INCOMPLETE_DOMINANT
             
             return DOMINANT_SEVENTH
@@ -98,7 +110,7 @@ def get_chord_type(tonic, chord):
         return DOMINANT
     
     # subdominant
-    elif subdomi_dist == (chord['root'] - tonic) % 12:
+    elif subdomi_dist == (chord['root'] - tonic['root']) % 12:
         
         # subdominant sixth, added a small sixth
         if chord['pitches'][(chord['root'] + small_sixth) % 12] != 0:
@@ -116,18 +128,18 @@ def get_chord_type(tonic, chord):
         return SUBDOMINANT
     
     # tonic parallel (two possiblities)
-    elif (minor and ((tonic - 3) % 12) == chord['root']) or \
-    (not minor and ((tonic + 3) % 12) == chord['root']):
+    elif (minor and ((tonic['root'] - 3) % 12) == chord['root']) or \
+    (not minor and ((tonic['root'] + 3) % 12) == chord['root']):
         return TONIC_PARALLEL
     
     # dominant parallel
-    elif (minor and domi_dist == (chord['root'] - tonic + 3) % 12) or \
-    (not minor and domi_dist == (chord['root'] - tonic - 3) % 12):
+    elif (minor and domi_dist == (chord['root'] - tonic['root'] + 3) % 12) or \
+    (not minor and domi_dist == (chord['root'] - tonic['root'] - 3) % 12):
         return DOMINANT_PARALLEL
     
     # subdominant parallel
-    elif (minor and subdomi_dist == (chord['root'] - tonic + 3) % 12) or \
-    (not minor and subdomi_dist == (chord['root'] - tonic - 3) % 12):
+    elif (minor and subdomi_dist == (chord['root'] - tonic['root'] + 3) % 12) or \
+    (not minor and subdomi_dist == (chord['root'] - tonic['root'] - 3) % 12):
         
         # subdominant parallel seventh
         if False:
@@ -138,20 +150,45 @@ def get_chord_type(tonic, chord):
     return None
 
 
-def find_legal_chords(TONIC, previous, chords):
+def find_legal_chords(tonic, previous, chords):
+    '''
+    Given a tonic (pitch-class), the previous chord and a set of
+    possible chords, find the chords from this set that are legal,
+    that is, the chords that the previous chord can transite into.
+    '''
     
     # find possible transitions from previous chord
-    type = get_chord_type(TONIC, previous)
-    pos = possible_transitions[type]
+    #print 'tonic:', tonic
+    #print 'previous:', previous
+    type = get_chord_type(tonic, previous)
+    print 'Type of previous:', type
     
-    # search for each chord in list of legal transitions
     legal_chords = []
-    for chord in chords:
-        type = get_chord_type(TONIC, chord)
-        if pos.count(type):
-            legal_chords.append(chord)
+    
+    if type:
+        pos = possible_transitions[type]
+        
+        # search for each chord in list of legal transitions
+        for chord in chords:
+            type = get_chord_type(tonic, chord)
+            if pos.count(type):
+                legal_chords.append(chord)
+                
     return legal_chords
 
+
+def get_highest(chords):
+    '''
+    Find the chord with the highest score among a list of chords
+    and return this chord.
+    '''
+    highest = 0
+    index = 0
+    for c in range(len(chords)):
+        if chords[c]['score'] > highest:
+            highest = chords[c]['score']
+            index = c
+    return chords[index]
 
 
 
@@ -165,27 +202,43 @@ def analyse_segments(key, segments):
     # a perfect fifth is 7 semitone-steps
     fifth_dist = 7
     
-    # step through circle of fifths to find root in scale
-    TONIC = {}
-    TONIC['mode'] = key['mode']
-    if TONIC['mode'] == 'major':
-        TONIC['root'] = (key['fifths'] * fifth_dist) % 12
-    else:
-        # the circle of fifths has 'A' as the first element in 'minor mode'
-        TONIC['root'] = 9 + (key['fifths'] * fifth_dist) % 12
+    if key:
     
-    if VERBOSE:
-        print 'Found TONIC:', TONIC
-        
-    prev_chord = None
-    for current in segments:
-        
-        candidates = current['candidates']
-        
-        legal_chords = find_legal_chords(TONIC, prev_chord, candidates)
-            
-        if len(legal_chords) > 0:
-            pass #  TODO: select candidate with highest score among legal ones
-            
+        # step through circle of fifths to find root in scale
+        tonic = {}
+        tonic['mode'] = key['mode']
+        if tonic['mode'] == 'major':
+            tonic['root'] = (key['fifths'] * fifth_dist) % 12
         else:
-            pass # TODO: select candidate with highest score
+            # the circle of fifths has 'A' as the first element in 'minor mode'
+            tonic['root'] = 9 + (key['fifths'] * fifth_dist) % 12
+        
+        if VERBOSE:
+            print 'Found tonic:', tonic
+            
+        prev_chord = None
+        for segment in segments:
+            
+            # find legal chords among candidates
+            candidates = segment['candidates']
+            
+            legal_chords = []
+            if prev_chord:
+                legal_chords = find_legal_chords(tonic, prev_chord, candidates)            
+                
+            if len(legal_chords) > 0:
+                if VERBOSE:
+                    print 'Found legal transitions:', legal_chords
+                segment['chord'] = get_highest(legal_chords)
+                prev_chord = segment['chord']
+                
+            elif len(candidates) > 0:
+                segment['chord'] = get_highest(candidates)
+                prev_chord = segment['chord']
+    
+    # no key has been set for the score so we pick candidates with highest score
+    else:
+        for segment in segments:
+            candidates = segment['candidates']
+            if len(candidates) > 0:
+                segment['chord'] = get_highest(candidates)
