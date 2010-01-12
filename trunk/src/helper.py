@@ -10,3 +10,5 @@ def chord(root, chord_template, pitches, score):
 def chord_template(name, template):
     return {'name': name,
             'template': template}
+    
+    
