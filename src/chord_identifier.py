@@ -51,7 +51,7 @@ def identify_chords(segments, chord_templates,
             # for all pitch classes, step through all templates
             for p in range(no_of_pitches):
                 for t in chord_templates:
-                    template = t['template'][:]
+                    template = t['pattern'][:]
                     template_length = len(template)
 
                     for i in range(template_length):

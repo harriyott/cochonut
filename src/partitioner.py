@@ -1,4 +1,4 @@
-VERBOSE = True
+VERBOSE = False
 
 def partition_score(intervals, required_attacks, time_frame):
     '''
