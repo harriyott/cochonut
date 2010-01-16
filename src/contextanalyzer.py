@@ -1,8 +1,8 @@
+from util import print_chord
+
 VERBOSE = True
 
-# key/value: step in scale/pitch class relative to root-note in scale
-#scale = {1: 0, 2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 11}
-
+# chord types
 TONIC, \
 DOMINANT, \
 DOMINANT_SEVENTH, \
@@ -37,11 +37,9 @@ SUBDOMINANT_PARALLEL: 'subdominant parallel',
 DOMINANT_PARALLEL: 'dominant parallel'
 }
 
-# TODO: Move to util module?
-CLASS_NAME_MAP = {0: 'C', 1: 'C#', 2: 'D', 3: 'D#', 4: 'E', 5: 'F',
-                 6: 'F#', 7: 'G', 8: 'G#', 9: 'A', 10: 'A#', 11: 'B'}
-
 # TODO: Check
+# possible chord-transitions: a transition is possible from a key in
+# this dictionary to every chord in the list, coupled with this key
 possible_transitions = {
 TONIC: [TONIC, DOMINANT, SUBDOMINANT, SUBDOMINANT_PARALLEL, DOMINANT_PARALLEL, TONIC_PARALLEL, INCOMPLETE_DOMINANT, INCOMPLETE_SUBDOMINANT],
 TONIC_PARALLEL: [DOMINANT, DOMINANT_SEVENTH, SUBDOMINANT, SUBDOMINANT_SIXTH, DOMINANT_PARALLEL, INCOMPLETE_SUBDOMINANT],
@@ -66,6 +64,7 @@ def find_chord_type(tonic, chord):
     
     SUBDOMINANT_DIST = 5
     SMALL_SEVENTH = 10
+    LARGE_SEVENTH = 11
     LARGE_SIXTH = 9
     SMALL_NONE = 13
     DOMINANT_DIST = 7
@@ -76,7 +75,7 @@ def find_chord_type(tonic, chord):
     fifth_replacedby_sixth = pattern[2] > 7
     fifth_size = pattern[2] - pattern[0]
             
-    # tonic
+    # tonic: same root as tonic
     if tonic['root'] == chord['root']:
         return TONIC
     
@@ -120,22 +119,23 @@ def find_chord_type(tonic, chord):
         
         return SUBDOMINANT
     
-    # tonic parallel
+    # tonic parallel: parallel chord to the tonic
     elif (minor and ((tonic['root'] + 3) % 12) == chord['root']) or \
     (not minor and ((tonic['root'] - 3) % 12) == chord['root']):
         return TONIC_PARALLEL
     
-    # dominant parallel
+    # dominant parallel: parallel chord to the dominant
     elif (minor and DOMINANT_DIST == (chord['root'] - tonic['root'] + 3) % 12) or \
     (not minor and DOMINANT_DIST == (chord['root'] - tonic['root'] - 3) % 12):
         return DOMINANT_PARALLEL
     
-    # subdominant parallel
+    # subdominant parallel: parallel chord to the subdominant
     elif (minor and SUBDOMINANT_DIST == (chord['root'] - tonic['root'] + 3) % 12) or \
     (not minor and SUBDOMINANT_DIST == (chord['root'] - tonic['root'] - 3) % 12):
         
-        # subdominant parallel seventh
-        if False:
+        # subdominant parallel seventh: sub. parallel added a seventh
+        if (minor and (chord['pitches'][(chord['root'] + SMALL_SEVENTH) % 12] != 0)) or \
+           (not minor and (chord['pitches'][(chord['root'] + LARGE_SEVENTH) % 12] != 0)):
             return SUBDOMINANT_PARALLEL_SEVENTH
         
         return SUBDOMINANT_PARALLEL
@@ -151,12 +151,7 @@ def find_legal_chords(tonic, previous, chords):
     '''
     
     # find possible transitions from previous chord
-    
-    #if VERBOSE:
-    #    print 'tonic:', tonic
-    #    print 'previous:', previous
     prev_type = find_chord_type(tonic, previous)
-    
     legal_chords = []
     
     if prev_type is not None:
@@ -200,8 +195,9 @@ def analyse_segments(key, segments):
     Assumes that musicxml has revealed the key
     '''
     
-    # a perfect fifth is 7 semitone-steps
-    fifth_dist = 7
+    # A perfect fifth is the distance between the elements in the
+    # circle of fifths. A perfect fifth is 7 semitone-steps
+    PERFECT_FIFTH = 7
     
     if key:
     
@@ -209,10 +205,10 @@ def analyse_segments(key, segments):
         tonic = {}
         tonic['mode'] = key['mode']
         if tonic['mode'] == 'major':
-            tonic['root'] = (key['fifths'] * fifth_dist) % 12
+            tonic['root'] = (key['fifths'] * PERFECT_FIFTH) % 12
         else:
             # the circle of fifths has 'A' as the first element in 'minor mode'
-            tonic['root'] = 9 + (key['fifths'] * fifth_dist) % 12
+            tonic['root'] = (9 + (key['fifths'] * PERFECT_FIFTH)) % 12
         
         if VERBOSE:
             print 'Found tonic:', tonic
@@ -230,28 +226,16 @@ def analyse_segments(key, segments):
                 legal_chords = find_legal_chords(tonic, prev_chord, candidates)            
                 
             if len(legal_chords) > 0:
-                #if VERBOSE:
-                #    print 'Found legal transitions:', legal_chords
                 segment['chord'] = get_highest(legal_chords)
                 prev_chord = segment['chord']
                 if VERBOSE:
-                    print 'Chosen chord: ' + \
-                    CLASS_NAME_MAP[segment['chord']['root']] + \
-                    segment['chord']['template']['name'] +\
-                    ' (' + \
-                    str(segment['chord']['template']['pattern']) + ')'
+                    print_chord('Chosen chord:', segment['chord'])
                 
             elif len(candidates) > 0:
-                #if VERBOSE:
-                #    print 'No legal transitions'
                 segment['chord'] = get_highest(candidates)
                 prev_chord = segment['chord']
                 if VERBOSE:
-                    print 'Chosen chord: ' + \
-                    CLASS_NAME_MAP[segment['chord']['root']] + \
-                    segment['chord']['template']['name'] +\
-                    ' (' + \
-                    str(segment['chord']['template']['pattern']) + ')'
+                    print_chord('Chosen chord:', segment['chord'])
     
     # no key has been set for the score so we pick candidates with highest score
     else:

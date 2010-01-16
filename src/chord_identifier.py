@@ -1,4 +1,4 @@
-VERBOSE = False
+VERBOSE = True
 
 def get_score(weight, template):
     '''
@@ -23,7 +23,7 @@ def get_score(weight, template):
 
 
 def identify_chords(segments, chord_templates,
-                    required_attacks, no_of_pitches, min_score):
+                    required_attacks, min_score):
     '''
     Identify the chords in a list of segments.
     '''
@@ -37,7 +37,7 @@ def identify_chords(segments, chord_templates,
         if segment['possible_chord']: # the first segment may not have enough note-attacks
 
             # step through mini-segments and collect pitches in weight
-            weight = [0] * no_of_pitches
+            weight = [0] * 12
             for mini_segment in mini_segments:
                 for pitch in mini_segment['pitches']:
                     weight[pitch['pitch_class']] += 1
@@ -49,16 +49,17 @@ def identify_chords(segments, chord_templates,
             scores = []
 
             # for all pitch classes, step through all templates
-            for p in range(no_of_pitches):
+            for p in range(12):
                 for t in chord_templates:
                     template = t['pattern'][:]
                     template_length = len(template)
 
                     for i in range(template_length):
-                        template[i] = (template[i] + p) % no_of_pitches
+                        template[i] = (template[i] + p) % 12
 
                     score = get_score(weight, template)
 
+                    # append a chord with the found score
                     scores.append({'root': p,
                                    'template': t,
                                    'pitches': weight,
