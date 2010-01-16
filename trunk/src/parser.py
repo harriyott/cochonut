@@ -1,4 +1,5 @@
 from lxml import etree
+from util import PITCH_CLASSES
 
 VERBOSE = False
 
@@ -129,7 +130,7 @@ def add_pitch(intervals,pitch, start, length):
 
 
 
-def parse_file(file, pitch_classes):
+def parse_file(file):
     '''
     Parse a file of the MusicXML format.
     '''
@@ -253,7 +254,7 @@ def parse_file(file, pitch_classes):
                             alt = note_data['p_alt']
                         
                         # pitch (class + octave)
-                        p_class = (pitch_classes[note_data['p_step']] + alt) % 12
+                        p_class = (PITCH_CLASSES[note_data['p_step']] + alt) % 12
                         pitch = {'pitch_class': p_class, 'octave': note_data['p_octave']}
                                 
                         # store in intervals list

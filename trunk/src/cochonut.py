@@ -6,6 +6,7 @@ from parser import parse_file
 from partitioner import partition_score
 from chord_identifier import identify_chords
 from contextanalyzer import analyse_segments
+from util import print_chord
 
 # chord templates
 # Important that the pitch-classes in the patterns are given in an
@@ -61,16 +62,6 @@ templates = [{'name': 'maj', 'pattern': [0, 4, 7]},
              {'name': '13+11', 'pattern': [0, 4, 7, 10, 14, 18, 21]},
              {'name': '13b', 'pattern': [0, 4, 7, 10, 14, 17, 20]}]
 
-# the main pitch classes without alternating steps
-PITCH_CLASSES = {'C': 0, 'C#': 1, 'D': 2, 'D#': 3, 'E': 4, 'F': 5,
-                 'F#': 6, 'G': 7, 'G#': 8, 'A': 9, 'A#': 10, 'B': 11}
-
-CLASS_NAME_MAP = {0: 'C', 1: 'C#', 2: 'D', 3: 'D#', 4: 'E', 5: 'F',
-                 6: 'F#', 7: 'G', 8: 'G#', 9: 'A', 10: 'A#', 11: 'B'}
-
-# no. of pitch classes
-NO_OF_PITCH_CLASSES = 12
-
 # note-attacks required to start a new segment
 REQUIRED_ATTACKS = 3
 
@@ -90,7 +81,6 @@ if __name__ == '__main__':
 
     if VERBOSE:
         print 'Starting cochonut....'
-        print 'Time-frame is ', TIME_FRAME
 
     # get file to parse from command-line arguments
     file = ''
@@ -105,7 +95,7 @@ if __name__ == '__main__':
         intervals = []
         if VERBOSE:
             print 'Starting parser....'
-        largest_divisor, intervals, key = parse_file(file, PITCH_CLASSES)
+        largest_divisor, intervals, key = parse_file(file)
 
         # partitioning
         if len(intervals) > 0:
@@ -123,7 +113,7 @@ if __name__ == '__main__':
                 if VERBOSE:
                     print 'Starting chord-identifier....'
                 identify_chords(segments, templates,
-                                REQUIRED_ATTACKS, NO_OF_PITCH_CLASSES, MIN_SCORE)
+                                REQUIRED_ATTACKS, MIN_SCORE)
 
                 # context analyzing
                 if VERBOSE:
@@ -135,11 +125,7 @@ if __name__ == '__main__':
                     print 'Segments with chords:'
                     for s in range(len(segments)):
                         if segments[s].has_key('chord'):
-                            print 'Segment ' + str(s) + ', chord: ' + \
-                            CLASS_NAME_MAP[segments[s]['chord']['root']] + \
-                            segments[s]['chord']['template']['name'] + \
-                            ' (' + \
-                            str(segments[s]['chord']['template']['pattern']) + ')'
+                            print_chord('Segment ' + str(s) + ', chord:',segments[s]['chord'])
                             
     after = time()
     print 'Time spent: ' + str(round((after-before)*1000,2)) + 'ms'
