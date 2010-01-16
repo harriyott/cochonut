@@ -1,5 +1,6 @@
 from sys import argv
 from sys import exit
+from time import time
 
 from parser import parse_file
 from partitioner import partition_score
@@ -7,11 +8,10 @@ from chord_identifier import identify_chords
 from contextanalyzer import analyse_segments
 
 # chord templates
-# important that the pitch-classes in the patterns are given in an
+# Important that the pitch-classes in the patterns are given in an
 # incremental order, as the context analyzer may need to check the
-# sizes of the intervals used in a template
-# furthermore important that no pitches are left out, as the context
-# analyzer might use them as well
+# sizes of the intervals used in a template. Furthermore important that
+# no pitches are left out, as the context analyzer might use them.
 templates = [{'name': 'maj', 'pattern': [0, 4, 7]},
              {'name': 'minor', 'pattern': [0, 3, 7]},
              {'name': 'diminished', 'pattern': [0, 3, 6]},
@@ -74,16 +74,19 @@ NO_OF_PITCH_CLASSES = 12
 # note-attacks required to start a new segment
 REQUIRED_ATTACKS = 3
 
-# 
-MIN_SCORE = 0.6
+# related to the getscore()-function in chord_identifier: the minimum
+# score of the highest found score that a chord must have to be
+# considered candidate
+MIN_SCORE = 0.85
 
 # the timeframe in which the required attacks must occur for chord change
-# TODO: Should be based on beat?
-TIME_FRAME = 1.0 / 16
+TIME_FRAME = 1.0/16
 
-VERBOSE = False
+VERBOSE = True
 
 if __name__ == '__main__':
+
+    before = time()
 
     if VERBOSE:
         print 'Starting cochonut....'
@@ -127,8 +130,6 @@ if __name__ == '__main__':
                     print 'Starting context-analyzer....'
                 analyse_segments(key, segments)
 
-                # TODO: from cochonut: 'a post-processing step is made to merge consecutive segments with identical chords.'
-
                 # print results
                 if VERBOSE:
                     print 'Segments with chords:'
@@ -139,4 +140,7 @@ if __name__ == '__main__':
                             segments[s]['chord']['template']['name'] + \
                             ' (' + \
                             str(segments[s]['chord']['template']['pattern']) + ')'
+                            
+    after = time()
+    print 'Time spent: ' + str(round((after-before)*1000,2)) + 'ms'
 

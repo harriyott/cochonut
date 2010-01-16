@@ -42,29 +42,27 @@ CLASS_NAME_MAP = {0: 'C', 1: 'C#', 2: 'D', 3: 'D#', 4: 'E', 5: 'F',
                  6: 'F#', 7: 'G', 8: 'G#', 9: 'A', 10: 'A#', 11: 'B'}
 
 # TODO: Check
-possible_transitions = {TONIC: [TONIC, DOMINANT, SUBDOMINANT,
-                                SUBDOMINANT_PARALLEL,
-                                DOMINANT_PARALLEL, TONIC_PARALLEL,
-                                INCOMPLETE_DOMINANT, INCOMPLETE_SUBDOMINANT],
-                        TONIC_PARALLEL: [DOMINANT, DOMINANT_SEVENTH,
-                                         SUBDOMINANT, SUBDOMINANT_SIXTH,
-                                         DOMINANT_PARALLEL, INCOMPLETE_SUBDOMINANT],
-                        SUBDOMINANT: [DOMINANT, DOMINANT_SEVENTH,
-                                      SUBDOMINANT_SIXTH, DOMINANT_QUARTER_SIXTH],
-                                      DOMINANT: [TONIC, TONIC_PARALLEL, DOMINANT_SEVENTH],
-                                      DOMINANT_SEVENTH: [TONIC],
-                                      INCOMPLETE_DOMINANT: [TONIC],
-                                      DOMINANT_NONE: [TONIC],
-                                      DOMINANT_QUARTER_SIXTH: [DOMINANT, DOMINANT_SEVENTH],
-                                      SUBDOMINANT_SIXTH: [SUBDOMINANT, TONIC, DOMINANT, DOMINANT_SEVENTH],
-                                      SUBDOMINANT_PARALLEL_SEVENTH: [],
-                                      MINOR_SUBDOMINANT: [DOMINANT_QUARTER_SIXTH],
-                                      INCOMPLETE_SUBDOMINANT: [DOMINANT, DOMINANT_SEVENTH, DOMINANT_QUARTER_SIXTH],
-                                      SUBDOMINANT_PARALLEL: [DOMINANT_PARALLEL, SUBDOMINANT, INCOMPLETE_DOMINANT, DOMINANT],
-                                      DOMINANT_PARALLEL: [SUBDOMINANT, DOMINANT_SEVENTH]}
+possible_transitions = {
+TONIC: [TONIC, DOMINANT, SUBDOMINANT, SUBDOMINANT_PARALLEL, DOMINANT_PARALLEL, TONIC_PARALLEL, INCOMPLETE_DOMINANT, INCOMPLETE_SUBDOMINANT],
+TONIC_PARALLEL: [DOMINANT, DOMINANT_SEVENTH, SUBDOMINANT, SUBDOMINANT_SIXTH, DOMINANT_PARALLEL, INCOMPLETE_SUBDOMINANT],
+SUBDOMINANT: [DOMINANT, DOMINANT_SEVENTH, SUBDOMINANT_SIXTH, DOMINANT_QUARTER_SIXTH],
+DOMINANT: [TONIC, TONIC_PARALLEL, DOMINANT_SEVENTH],
+DOMINANT_SEVENTH: [TONIC],
+INCOMPLETE_DOMINANT: [TONIC],
+DOMINANT_NONE: [TONIC],
+DOMINANT_QUARTER_SIXTH: [DOMINANT, DOMINANT_SEVENTH],
+SUBDOMINANT_SIXTH: [SUBDOMINANT, TONIC, DOMINANT, DOMINANT_SEVENTH],
+SUBDOMINANT_PARALLEL_SEVENTH: [],
+MINOR_SUBDOMINANT: [DOMINANT_QUARTER_SIXTH],
+INCOMPLETE_SUBDOMINANT: [DOMINANT, DOMINANT_SEVENTH, DOMINANT_QUARTER_SIXTH],
+SUBDOMINANT_PARALLEL: [DOMINANT_PARALLEL, SUBDOMINANT, INCOMPLETE_DOMINANT, DOMINANT],
+DOMINANT_PARALLEL: [SUBDOMINANT, DOMINANT_SEVENTH]}
 
 
-def get_chord_type(tonic, chord):
+def find_chord_type(tonic, chord):
+    '''
+    Find the chord-type of a given chord, relative to a given tonic
+    '''
     
     SUBDOMINANT_DIST = 5
     SMALL_SEVENTH = 10
@@ -74,7 +72,6 @@ def get_chord_type(tonic, chord):
     minor = tonic['mode'] == 'minor'
     
     pattern = chord['template']['pattern']
-    #third_size = pattern[1] - pattern[0]
     third_replacedby_quarter = pattern[1] > 4
     fifth_replacedby_sixth = pattern[2] > 7
     fifth_size = pattern[2] - pattern[0]
@@ -123,9 +120,9 @@ def get_chord_type(tonic, chord):
         
         return SUBDOMINANT
     
-    # tonic parallel (two possiblities)
-    elif (minor and ((tonic['root'] - 3) % 12) == chord['root']) or \
-    (not minor and ((tonic['root'] + 3) % 12) == chord['root']):
+    # tonic parallel
+    elif (minor and ((tonic['root'] + 3) % 12) == chord['root']) or \
+    (not minor and ((tonic['root'] - 3) % 12) == chord['root']):
         return TONIC_PARALLEL
     
     # dominant parallel
@@ -158,7 +155,7 @@ def find_legal_chords(tonic, previous, chords):
     #if VERBOSE:
     #    print 'tonic:', tonic
     #    print 'previous:', previous
-    prev_type = get_chord_type(tonic, previous)
+    prev_type = find_chord_type(tonic, previous)
     
     legal_chords = []
     
@@ -169,7 +166,7 @@ def find_legal_chords(tonic, previous, chords):
         
         # search for each chord in list of legal transitions
         for chord in chords:
-            type = get_chord_type(tonic, chord)
+            type = find_chord_type(tonic, chord)
             if pos.count(type):
                 if VERBOSE:
                     print 'Found legal transition to', names[type], chord
@@ -183,7 +180,8 @@ def find_legal_chords(tonic, previous, chords):
 def get_highest(chords):
     '''
     Find the chord with the highest score among a list of chords
-    and return this chord.
+    and return this chord. In case of more than one chords having
+    the highest score, the first one found will be returned.
     '''
     highest = 0
     index = 0
