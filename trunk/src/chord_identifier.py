@@ -1,4 +1,4 @@
-VERBOSE = True
+VERBOSE = False
 
 def get_score(weight, template):
     '''
