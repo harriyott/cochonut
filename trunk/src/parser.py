@@ -44,6 +44,10 @@ def get_note_data(note_elem):
     rest_elem = note_elem.find('rest')
     if rest_elem is not None:
         note_data['type'] = 'rest'
+        
+    unpitch_elem = note_elem.find('unpitched')
+    if unpitch_elem is not None:
+        note_data['type'] = 'unpitched'
 
     dur_elem = note_elem.find('duration')
     if dur_elem is not None:
@@ -54,8 +58,8 @@ def get_note_data(note_elem):
 
 
 def get_part_list(tree):
-    '''Retrieve a list of the part_elems in the music. The music must be
-    represented by a MusicXML-tree.
+    '''
+    Retrieve a list of parts in a MusicXML-tree.
     '''
     part_list = []
     part_elems = tree.find('part-list')
@@ -95,7 +99,8 @@ def find_largest_div(tree):
 
 def find_key(tree):
     '''
-    Find key.
+    Find key of the score and return its information as a dictionary.
+    Only the information from the first found key-element is returned.
     '''
     key = {}
     key_elem = tree.find('measure/part/attributes/key')
@@ -108,7 +113,9 @@ def find_key(tree):
 def add_rest(intervals, start, length):
     '''
     Add a rest to the list of intervals. The rest will start at
-    interval 'start' and last start+length intervals.
+    interval 'start' and last start+length intervals. Rests will
+    only be appended to the list of intervals as we do not want
+    to over-write data.
     '''
     for i in range(start,start+length):
         if i+1 > len(intervals):
@@ -119,7 +126,9 @@ def add_rest(intervals, start, length):
 def add_pitch(intervals,pitch, start, length):
     '''
     Add a pitch to the list of intervals. The pitch will start at
-    interval 'start' and last start+length intervals.
+    interval 'start' and last start+length intervals. If adding a pitch
+    to an interval that already has data, we simply add it to the list
+    of pitches.
     '''
     for i in range(start,start+length):
         if i+1 > len(intervals):
@@ -132,7 +141,8 @@ def add_pitch(intervals,pitch, start, length):
 
 def parse_file(file):
     '''
-    Parse a file of the MusicXML format.
+    Parses a file of the MusicXML format and returns a list of
+    'intervals' representing the music from this file.
     '''
     
     if VERBOSE:
@@ -153,8 +163,7 @@ def parse_file(file):
     elif docroot.tag == 'score-timewise':
         xml_tree = doc
     else:
-        error = 'Provided file is not MusicXML'
-        raise Exception(error)
+        raise Exception('Provided file is not MusicXML')
 
     # key of the score
     key = find_key(xml_tree)
@@ -219,6 +228,8 @@ def parse_file(file):
 
                 if p_child.tag == 'note':
                     note_data = get_note_data(p_child)
+                    #print etree.dump(p_child)
+                    #print note_data
 
                     duration = 0
                     if note_data.has_key('duration'):
@@ -292,5 +303,15 @@ def parse_file(file):
             # store the next interval with the part as we may be
             # switching to another part
             part['next_interval'] = next_interval
+            
+            #if part_id == 'P17':
+            #    print intervals[0]
+            #    print intervals[1]
+            #    print intervals[2]
+            #    print intervals[1023]
+            #    print intervals[1024]
+                
+            
+        #exit()
     
     return largest_divisor, intervals, key
