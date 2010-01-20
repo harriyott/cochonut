@@ -8,6 +8,8 @@ from chord_identifier import identify_chords
 from contextanalyzer import analyse_segments
 from util import print_chord
 
+VERBOSE = True
+
 # chord templates
 # Important that the pitch-classes in the patterns are given in an
 # incremental order, as the context analyzer may need to check the
@@ -73,8 +75,6 @@ MIN_SCORE = 0.85
 # the timeframe in which the required attacks must occur for chord change
 TIME_FRAME = 1.0/16
 
-VERBOSE = True
-
 if __name__ == '__main__':
 
     before = time()
@@ -100,13 +100,14 @@ if __name__ == '__main__':
         # partitioning
         if len(intervals) > 0:
 
+            shortest = 1 / (4.0 * largest_divisor)
             frame_length = TIME_FRAME / (1 / (4.0 * largest_divisor))
             #print 'frame_length:', frame_length
 
             segments = []
             if VERBOSE:
                 print 'Starting partitioner....'
-            segments = partition_score(intervals, REQUIRED_ATTACKS, frame_length)
+            segments = partition_score(intervals, frame_length, REQUIRED_ATTACKS)
 
             # chord identifiyng
             if len(segments) > 0:
@@ -120,12 +121,17 @@ if __name__ == '__main__':
                     print 'Starting context-analyzer....'
                 analyse_segments(key, segments)
 
-                # print results
+                # print results (each chord will be printed with a number 
+                # that specifies where the chord starts in terms of 1/8 into the music,
+                # for example "17, chord: Dminor" means that a Dminor
+                # starts at 17 1/8-notes into the score.
                 if VERBOSE:
                     print 'Segments with chords:'
                     for s in range(len(segments)):
                         if segments[s].has_key('chord'):
-                            print_chord('Segment ' + str(s) + ', chord:',segments[s]['chord'])
+                            start = int(((shortest*segments[s]['start']) / 0.125) + 1)
+                            description = str(start) + ', chord:'
+                            print_chord(description,segments[s]['chord'])
                             
     after = time()
     print 'Time spent: ' + str(round((after-before)*1000,2)) + 'ms'

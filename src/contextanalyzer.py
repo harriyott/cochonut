@@ -74,20 +74,26 @@ def find_chord_type(tonic, chord):
     third_replacedby_quarter = pattern[1] > 4
     fifth_replacedby_sixth = pattern[2] > 7
     fifth_size = pattern[2] - pattern[0]
+    
+    # the pitch classes that the dominant and subdominant are built on 
+    dominant = (tonic['root'] + DOMINANT_DIST) % 12
+    subdominant = (tonic['root'] + SUBDOMINANT_DIST) % 12
+    
+    root = chord['root'] # the root of the chord
             
     # tonic: same root as tonic
-    if tonic['root'] == chord['root']:
+    if tonic['root'] == root:
         return TONIC
     
     # dominant
-    elif DOMINANT_DIST == (chord['root'] - tonic['root']) % 12:
+    elif root == dominant:
         
         # dominant none: dominant added a small none
-        if chord['pitches'][(chord['root'] + SMALL_NONE) % 12] != 0:
+        if chord['pitches'][(root + SMALL_NONE) % 12] != 0:
             return DOMINANT_NONE
         
         # dominant seventh: dominant added a small seventh
-        elif chord['pitches'][(chord['root'] + SMALL_SEVENTH) % 12] != 0:
+        elif chord['pitches'][(root + SMALL_SEVENTH) % 12] != 0:
 
             # in-complete dominant: dominant with no pitch at root
             if chord['pitches'][(tonic['root'] + DOMINANT_DIST) % 12] == 0:
@@ -102,40 +108,44 @@ def find_chord_type(tonic, chord):
         return DOMINANT
     
     # subdominant
-    elif SUBDOMINANT_DIST == (chord['root'] - tonic['root']) % 12:
+    elif root == subdominant:
         
         # subdominant sixth: subdominant added a small sixth
-        if chord['pitches'][(chord['root'] + LARGE_SIXTH) % 12] != 0:
+        if chord['pitches'][(root + LARGE_SIXTH) % 12] != 0:
             
             # in-complete subdominant: subdominant sixth with no fifth
-            if chord['pitches'][(chord['root'] + fifth_size) % 12] == 0:
+            if chord['pitches'][(root + fifth_size) % 12] == 0:
                 return INCOMPLETE_SUBDOMINANT
             
             return SUBDOMINANT_SIXTH
         
         # minor subdominant: subdominant added a large sixth
-        elif chord['pitches'][(chord['root'] + LARGE_SIXTH) % 12] != 0:
+        elif chord['pitches'][(root + LARGE_SIXTH) % 12] != 0:
             return MINOR_SUBDOMINANT
         
         return SUBDOMINANT
     
     # tonic parallel: parallel chord to the tonic
-    elif (minor and ((tonic['root'] + 3) % 12) == chord['root']) or \
-    (not minor and ((tonic['root'] - 3) % 12) == chord['root']):
+    elif (minor and ((tonic['root'] + 3) % 12) == root) or \
+    (not minor and ((tonic['root'] - 3) % 12) == root):
         return TONIC_PARALLEL
     
     # dominant parallel: parallel chord to the dominant
-    elif (minor and DOMINANT_DIST == (chord['root'] - tonic['root'] + 3) % 12) or \
-    (not minor and DOMINANT_DIST == (chord['root'] - tonic['root'] - 3) % 12):
+    elif (minor and root == (dominant + 3) % 12) or \
+    (not minor and root == (dominant - 3) % 12):
         return DOMINANT_PARALLEL
     
+    #elif (minor and DOMINANT_DIST == (root - (tonic['root'] + 3)) % 12) or \
+    #(not minor and DOMINANT_DIST == (root - (tonic['root'] - 3)) % 12):
+    #    return DOMINANT_PARALLEL
+    
     # subdominant parallel: parallel chord to the subdominant
-    elif (minor and SUBDOMINANT_DIST == (chord['root'] - tonic['root'] + 3) % 12) or \
-    (not minor and SUBDOMINANT_DIST == (chord['root'] - tonic['root'] - 3) % 12):
+    elif (minor and root == (subdominant + 3) % 12) or \
+    (not minor and root == (subdominant - 3) % 12):
         
         # subdominant parallel seventh: sub. parallel added a seventh
-        if (minor and (chord['pitches'][(chord['root'] + SMALL_SEVENTH) % 12] != 0)) or \
-           (not minor and (chord['pitches'][(chord['root'] + LARGE_SEVENTH) % 12] != 0)):
+        if (minor and (chord['pitches'][(root + SMALL_SEVENTH) % 12] != 0)) or \
+           (not minor and (chord['pitches'][(root + LARGE_SEVENTH) % 12] != 0)):
             return SUBDOMINANT_PARALLEL_SEVENTH
         
         return SUBDOMINANT_PARALLEL
