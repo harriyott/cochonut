@@ -4,12 +4,14 @@ def get_score(weight, template):
     '''
     Get the score of a weight vector using a given template.
     The template must be adjusted to a given root/template combination
+    before it is passed to the function, fx. the template [9, 1, 4]
+    represents an A-major.
     '''
     # sum of pitch-occurences for pitch-classes in template
     positives = 0.0
     # sum of pitch-occurences for pitch-classes outside template
     negatives = 0.0
-    # number of pitch-classes from template that are not "attacked"
+    # number of pitch-classes from template that are not present in weight-vector
     misses = 0.0
     for w in range(len(weight)):
         if w in template:

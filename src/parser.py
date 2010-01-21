@@ -16,9 +16,6 @@ def get_note_data(note_elem):
     p_alt (only if pitch): 1 if sharp, -1 if flat
     '''
 
-    #if VERBOSE:
-    #    print 'Getting note_data for:\n', etree.dump(note_elem)
-
     note_data = {'is_chord': False}
 
     chord_elem = note_elem.find('chord')
@@ -96,6 +93,7 @@ def find_largest_div(tree):
             largest_divisor = div
 
     return largest_divisor
+
 
 def find_key(tree):
     '''
@@ -227,13 +225,11 @@ def parse_file(file):
                 #---- note ----#
 
                 if p_child.tag == 'note':
-                    note_data = get_note_data(p_child)
-                    #print etree.dump(p_child)
-                    #print note_data
+                    note = get_note_data(p_child)
 
                     duration = 0
-                    if note_data.has_key('duration'):
-                        duration = note_data['duration']
+                    if note.has_key('duration'):
+                        duration = note['duration']
                     
                     # how long is the note in terms of a quater note?
                     quater_part = duration / float(current_div)
@@ -242,16 +238,16 @@ def parse_file(file):
                     # the note lasts
                     length = int(quater_part * largest_divisor)
                     
-                    if note_data['type'] == 'rest':
+                    if note['type'] == 'rest':
                         add_rest(intervals, next_interval, length)
                         if VERBOSE:
                             print "Added rest from " + str(next_interval) + " to " \
                             + str(next_interval+length-1)
                         next_interval = next_interval + length
                         
-                    elif note_data['type'] == 'pitch':
+                    elif note['type'] == 'pitch':
 
-                        if not note_data['is_chord']:
+                        if not note['is_chord']:
                             # the note is not a chord, so the interval that we
                             # place the note in is the next one. If the
                             # note was a chord, the current interval
@@ -261,12 +257,12 @@ def parse_file(file):
                         
                         # pitch alternation
                         alt = 0
-                        if note_data.has_key('p_alt'):
-                            alt = note_data['p_alt']
+                        if note.has_key('p_alt'):
+                            alt = note['p_alt']
                         
                         # pitch (class + octave)
-                        p_class = (PITCH_CLASSES[note_data['p_step']] + alt) % 12
-                        pitch = {'pitch_class': p_class, 'octave': note_data['p_octave']}
+                        p_class = (PITCH_CLASSES[note['p_step']] + alt) % 12
+                        pitch = {'pitch_class': p_class, 'octave': note['p_octave']}
                                 
                         # store in intervals list
                         if duration > 0:

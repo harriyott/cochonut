@@ -14,7 +14,7 @@ VERBOSE = True
 # Important that the pitch-classes in the patterns are given in an
 # incremental order, as the context analyzer may need to check the
 # sizes of the intervals used in a template. Furthermore important that
-# no pitches are left out, as the context analyzer might use them.
+# no pitches are left out, as the context analyzer might need to use them all.
 templates = [{'name': 'maj', 'pattern': [0, 4, 7]},
              {'name': 'minor', 'pattern': [0, 3, 7]},
              {'name': 'diminished', 'pattern': [0, 3, 6]},
@@ -72,7 +72,7 @@ REQUIRED_ATTACKS = 3
 # considered candidate
 MIN_SCORE = 0.85
 
-# the timeframe in which the required attacks must occur for chord change
+# the timeframe in which the required attacks must occur for chord change, it is given as a note-length
 TIME_FRAME = 1.0/16
 
 if __name__ == '__main__':
@@ -102,7 +102,6 @@ if __name__ == '__main__':
 
             shortest = 1 / (4.0 * largest_divisor)
             frame_length = TIME_FRAME / (1 / (4.0 * largest_divisor))
-            #print 'frame_length:', frame_length
 
             segments = []
             if VERBOSE:

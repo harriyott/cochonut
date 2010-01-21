@@ -1,6 +1,6 @@
 from util import print_chord
 
-VERBOSE = True
+VERBOSE = False
 
 # chord types
 TONIC, \
@@ -37,7 +37,6 @@ SUBDOMINANT_PARALLEL: 'subdominant parallel',
 DOMINANT_PARALLEL: 'dominant parallel'
 }
 
-# TODO: Check
 # possible chord-transitions: a transition is possible from a key in
 # this dictionary to every chord in the list, coupled with this key
 possible_transitions = {
@@ -134,10 +133,6 @@ def find_chord_type(tonic, chord):
     elif (minor and root == (dominant + 3) % 12) or \
     (not minor and root == (dominant - 3) % 12):
         return DOMINANT_PARALLEL
-    
-    #elif (minor and DOMINANT_DIST == (root - (tonic['root'] + 3)) % 12) or \
-    #(not minor and DOMINANT_DIST == (root - (tonic['root'] - 3)) % 12):
-    #    return DOMINANT_PARALLEL
     
     # subdominant parallel: parallel chord to the subdominant
     elif (minor and root == (subdominant + 3) % 12) or \
