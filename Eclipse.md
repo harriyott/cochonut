@@ -1,0 +1,1 @@
+Eclipse .project and .pydevproject files have been committed to the trunk, in order to make it easier to import the code into Eclipse.

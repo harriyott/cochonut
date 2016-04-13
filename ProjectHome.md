@@ -1,0 +1,1 @@
+This Python project is about implementing the COCHONUT algorithm for automatic chord recognition presented in "COCHONUT: Recognizing Complex Chords From MIDI Guitar Sequences" by Scholz, R. and Ramalho, G., published at ISMIR 2008.
